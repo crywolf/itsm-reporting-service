@@ -7,6 +7,7 @@ import (
 	"testing"
 
 	"github.com/KompiTech/itsm-reporting-service/internal/domain/job"
+	jobprocessor "github.com/KompiTech/itsm-reporting-service/internal/domain/job/processor"
 	"github.com/KompiTech/itsm-reporting-service/internal/domain/ref"
 	"github.com/KompiTech/itsm-reporting-service/internal/mocks"
 	"github.com/KompiTech/itsm-reporting-service/internal/testutils"
@@ -18,29 +19,71 @@ func TestCreateJobHandler(t *testing.T) {
 	logger, _ := testutils.NewTestLogger()
 	defer func() { _ = logger.Sync() }()
 
-	jobsSvc := new(mocks.JobServiceMock)
-	jobsSvc.On("CreateJob").
-		Return(ref.UUID("38316161-3035-4864-ad30-6231392d3433"), nil)
+	t.Parallel()
 
-	jobProcessor := new(mocks.JobProcessorMock)
+	t.Run("when the job processor is busy", func(t *testing.T) {
+		jobID := ref.UUID("38316161-3035-4864-ad30-6231392d3433")
+		jobsSvc := new(mocks.JobServiceMock)
+		jobsSvc.On("CreateJob").
+			Return(jobID, nil)
 
-	server := NewServer(Config{
-		Addr:                    "service.url",
-		Logger:                  logger,
-		JobsService:             jobsSvc,
-		JobsProcessor:           jobProcessor,
-		ExternalLocationAddress: "http://service.url",
+		jobProcessor := new(mocks.JobProcessorMock)
+		jobProcessor.On("ProcessNewJob", jobID).Return(jobprocessor.ErrorBusy)
+
+		server := NewServer(Config{
+			Addr:                    "service.url",
+			Logger:                  logger,
+			JobsService:             jobsSvc,
+			JobsProcessor:           jobProcessor,
+			ExternalLocationAddress: "http://service.url",
+		})
+
+		req := httptest.NewRequest("POST", "/jobs", nil)
+
+		w := httptest.NewRecorder()
+		server.ServeHTTP(w, req)
+		resp := w.Result()
+
+		defer func() { _ = resp.Body.Close() }()
+		b, err := ioutil.ReadAll(resp.Body)
+		if err != nil {
+			t.Fatalf("could not read response: %v", err)
+		}
+
+		assert.Equal(t, http.StatusTooManyRequests, resp.StatusCode, "Status code")
+		assert.Equal(t, "600", resp.Header.Get("Retry-After"), "Retry-After header")
+
+		expectedJSON := `{"error":"job is being processed, try it later"}`
+		assert.JSONEq(t, expectedJSON, string(b), "response does not match")
 	})
 
-	req := httptest.NewRequest("POST", "/jobs", nil)
+	t.Run("when the job processor is ready", func(t *testing.T) {
+		jobID := ref.UUID("38316161-3035-4864-ad30-6231392d3433")
+		jobsSvc := new(mocks.JobServiceMock)
+		jobsSvc.On("CreateJob").
+			Return(jobID, nil)
 
-	w := httptest.NewRecorder()
-	server.ServeHTTP(w, req)
-	resp := w.Result()
+		jobProcessor := new(mocks.JobProcessorMock)
+		jobProcessor.On("ProcessNewJob", jobID).Return(nil)
 
-	assert.Equal(t, http.StatusCreated, resp.StatusCode, "Status code")
-	expectedLocation := "http://service.url/jobs/38316161-3035-4864-ad30-6231392d3433"
-	assert.Equal(t, expectedLocation, resp.Header.Get("Location"), "Location header")
+		server := NewServer(Config{
+			Addr:                    "service.url",
+			Logger:                  logger,
+			JobsService:             jobsSvc,
+			JobsProcessor:           jobProcessor,
+			ExternalLocationAddress: "http://service.url",
+		})
+
+		req := httptest.NewRequest("POST", "/jobs", nil)
+
+		w := httptest.NewRecorder()
+		server.ServeHTTP(w, req)
+		resp := w.Result()
+
+		assert.Equal(t, http.StatusCreated, resp.StatusCode, "Status code")
+		expectedLocation := "http://service.url/jobs/38316161-3035-4864-ad30-6231392d3433"
+		assert.Equal(t, expectedLocation, resp.Header.Get("Location"), "Location header")
+	})
 }
 
 func TestGetIncidentHandler(t *testing.T) {
@@ -77,7 +120,6 @@ func TestGetIncidentHandler(t *testing.T) {
 	resp := w.Result()
 
 	defer func() { _ = resp.Body.Close() }()
-
 	b, err := ioutil.ReadAll(resp.Body)
 	if err != nil {
 		t.Fatalf("could not read response: %v", err)

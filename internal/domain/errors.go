@@ -17,8 +17,7 @@ const (
 	ErrorCodeUnknown ErrorCode = iota
 	ErrorCodeNotFound
 	ErrorCodeInvalidArgument
-	ErrorCodeActionForbidden
-	ErrorCodeUserNotAuthorized
+	ErrorJobsProcessorIsBusy
 )
 
 // WrapErrorf returns a wrapped error

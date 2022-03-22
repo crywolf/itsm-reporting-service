@@ -71,10 +71,9 @@ func (p BasicPresenter) RenderError(w http.ResponseWriter, msg string, err error
 			status = http.StatusBadRequest
 		case domain.ErrorCodeNotFound:
 			status = http.StatusNotFound
-		case domain.ErrorCodeUserNotAuthorized:
-			status = http.StatusUnauthorized
-		case domain.ErrorCodeActionForbidden:
-			status = http.StatusForbidden
+		case domain.ErrorJobsProcessorIsBusy:
+			status = http.StatusTooManyRequests
+			w.Header().Set("Retry-After", "600")
 		case domain.ErrorCodeUnknown:
 			fallthrough
 		default:

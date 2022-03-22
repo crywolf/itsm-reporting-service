@@ -8,7 +8,7 @@ import (
 	"syscall"
 	"time"
 
-	"github.com/KompiTech/itsm-reporting-service/internal/domain/job"
+	"github.com/KompiTech/itsm-reporting-service/internal/domain/job/processor"
 	jobsvc "github.com/KompiTech/itsm-reporting-service/internal/domain/job/service"
 	"github.com/KompiTech/itsm-reporting-service/internal/domain/types"
 	"github.com/KompiTech/itsm-reporting-service/internal/http/rest"
@@ -47,7 +47,7 @@ func main() {
 		URISchema:               "http://",
 		Logger:                  logger,
 		JobsService:             jobService,
-		JobsProcessor:           job.NewProcessor(),
+		JobsProcessor:           jobprocessor.NewJobProcessor(logger, jobRepository),
 		ExternalLocationAddress: viper.GetString("ExternalLocationAddress"),
 	})
 

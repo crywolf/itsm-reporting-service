@@ -1,7 +1,6 @@
 package rest
 
 import (
-	"fmt"
 	"net/http"
 
 	"github.com/KompiTech/itsm-reporting-service/internal/domain/ref"
@@ -19,8 +18,11 @@ func (s *Server) CreateJob() func(http.ResponseWriter, *http.Request, httprouter
 			return
 		}
 
-		fmt.Println("job ID:", newID)
-		s.jobsProcessor.ProcessNewJob()
+		if err = s.jobsProcessor.ProcessNewJob(newID); err != nil {
+			s.logger.Errorw("CreateJob handler failed", "error", err)
+			s.jobsPresenter.RenderError(w, "", err)
+			return
+		}
 
 		s.jobsPresenter.RenderCreatedHeader(w, listJobsRoute, newID)
 	}

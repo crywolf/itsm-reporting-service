@@ -1,4 +1,4 @@
-# Reporting service
+# ITSM Reporting service
 
 `make test` runs unit tests
 

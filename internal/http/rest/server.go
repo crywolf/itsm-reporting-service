@@ -4,7 +4,7 @@ import (
 	"net/http"
 	"time"
 
-	"github.com/KompiTech/itsm-reporting-service/internal/domain/job"
+	jobprocessor "github.com/KompiTech/itsm-reporting-service/internal/domain/job/processor"
 	jobsvc "github.com/KompiTech/itsm-reporting-service/internal/domain/job/service"
 	"github.com/KompiTech/itsm-reporting-service/internal/http/rest/presenters"
 	"github.com/julienschmidt/httprouter"
@@ -19,7 +19,7 @@ type Server struct {
 	logger                  *zap.SugaredLogger
 	jobsService             jobsvc.JobService
 	jobsPresenter           presenters.JobPresenter
-	jobsProcessor           job.Processor
+	jobsProcessor           jobprocessor.JobProcessor
 	ExternalLocationAddress string
 }
 
@@ -29,7 +29,7 @@ type Config struct {
 	URISchema               string
 	Logger                  *zap.SugaredLogger
 	JobsService             jobsvc.JobService
-	JobsProcessor           job.Processor
+	JobsProcessor           jobprocessor.JobProcessor
 	ExternalLocationAddress string
 }
 
