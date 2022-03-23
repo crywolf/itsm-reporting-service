@@ -15,28 +15,28 @@ type JobRepositoryMock struct {
 	Wg sync.WaitGroup
 }
 
-func (r *JobRepositoryMock) AddJob(_ context.Context, job job.Job) (ref.UUID, error) {
-	args := r.Called(job)
+func (m *JobRepositoryMock) AddJob(_ context.Context, job job.Job) (ref.UUID, error) {
+	args := m.Called(job)
 	return args.Get(0).(ref.UUID), args.Error(1)
 }
 
-func (r *JobRepositoryMock) UpdateJob(ctx context.Context, job job.Job) (ref.UUID, error) {
+func (m *JobRepositoryMock) UpdateJob(_ context.Context, job job.Job) (ref.UUID, error) {
 	//TODO implement me
 	panic("implement me")
 }
 
-func (r *JobRepositoryMock) GetJob(ctx context.Context, ID ref.UUID) (job.Job, error) {
+func (m *JobRepositoryMock) GetJob(_ context.Context, ID ref.UUID) (job.Job, error) {
 	//TODO implement me
 	panic("implement me")
 }
 
-func (r *JobRepositoryMock) GetLastJob(_ context.Context) (job.Job, error) {
-	defer r.Wg.Done()
-	args := r.Called()
+func (m *JobRepositoryMock) GetLastJob(_ context.Context) (job.Job, error) {
+	defer m.Wg.Done()
+	args := m.Called()
 	return args.Get(0).(job.Job), args.Error(1)
 }
 
-func (r *JobRepositoryMock) ListJobs(ctx context.Context) ([]job.Job, error) {
+func (m *JobRepositoryMock) ListJobs(_ context.Context) ([]job.Job, error) {
 	//TODO implement me
 	panic("implement me")
 }

@@ -8,6 +8,7 @@ import (
 	"syscall"
 	"time"
 
+	chandownloader "github.com/KompiTech/itsm-reporting-service/internal/domain/channel/downloader"
 	"github.com/KompiTech/itsm-reporting-service/internal/domain/job/processor"
 	jobsvc "github.com/KompiTech/itsm-reporting-service/internal/domain/job/service"
 	"github.com/KompiTech/itsm-reporting-service/internal/domain/types"
@@ -40,6 +41,9 @@ func main() {
 	clock := realClock{}
 	jobRepository := memory.NewJobRepositoryMemory(clock)
 	jobService := jobsvc.NewJobService(jobRepository)
+	channelRepository := memory.NewChannelRepositoryMemory()
+	channelDownloader := chandownloader.NewChannelDownloader()
+	jobProcessor := jobprocessor.NewJobProcessor(logger, jobRepository, channelRepository, channelDownloader)
 
 	// HTTP server
 	server := rest.NewServer(rest.Config{
@@ -47,7 +51,7 @@ func main() {
 		URISchema:               "http://",
 		Logger:                  logger,
 		JobsService:             jobService,
-		JobsProcessor:           jobprocessor.NewJobProcessor(logger, jobRepository),
+		JobsProcessor:           jobProcessor,
 		ExternalLocationAddress: viper.GetString("ExternalLocationAddress"),
 	})
 
@@ -77,6 +81,12 @@ func main() {
 			logger.Errorw("HTTP server Shutdown", "error", err)
 		}
 		logger.Info("HTTP server shutdown finished successfully")
+
+		// Close connection to external channel service
+		logger.Info("Closing ChannelDownloader client")
+		if err := channelDownloader.Close(); err != nil {
+			logger.Error("error closing ChannelDownloader client", zap.Error(err))
+		}
 
 		close(idleConnsClosed)
 	}()

@@ -5,6 +5,7 @@ import (
 	"time"
 
 	"github.com/KompiTech/itsm-reporting-service/internal/domain"
+	"github.com/KompiTech/itsm-reporting-service/internal/domain/channel"
 	"github.com/KompiTech/itsm-reporting-service/internal/domain/job"
 	"github.com/KompiTech/itsm-reporting-service/internal/mocks"
 	"github.com/KompiTech/itsm-reporting-service/internal/testutils"
@@ -24,47 +25,68 @@ func Test_processor_ProcessNewJob(t *testing.T) {
 	err = lastJob2.SetUUID("c0582f65-4c7d-469f-a3a4-42360f287074")
 	require.NoError(t, err)
 
-	t.Parallel()
-
 	t.Run("when the processor is busy", func(t *testing.T) {
-		repo := new(mocks.JobRepositoryMock)
-		repo.Wg.Add(1)
-		repo.On("GetLastJob").Return(lastJob, nil).Once()
+		jobsRepo := new(mocks.JobRepositoryMock)
+		jobsRepo.Wg.Add(1)
+		jobsRepo.On("GetLastJob").Return(lastJob, nil).Once()
 
-		jp := NewJobProcessor(logger, repo)
+		channelDownloader := new(mocks.ChannelDownloaderMock)
+		channelList := channel.List{}
+		channelDownloader.On("DownloadChannelList").Return(channelList, nil).Once()
+
+		channelRepo := new(mocks.ChannelRepositoryMock)
+		channelRepo.Wg.Add(1)
+		channelRepo.On("StoreChannelList", channelList).Return(nil).Once()
+
+		jp := NewJobProcessor(logger, jobsRepo, channelRepo, channelDownloader)
 		jp.WaitForJobs()
 
 		err = jp.ProcessNewJob(lastJob.UUID())
 		assert.NoError(t, err, "unexpected error", err)
 
-		err = jp.ProcessNewJob(lastJob2.UUID())
+		err = jp.ProcessNewJob(lastJob2.UUID()) // this call should return error
 		assert.Error(t, err, "expecting error but none returned")
-
 		var domainErr *domain.Error
 		assert.ErrorAs(t, err, &domainErr)
-
 		assert.EqualError(t, err, "job is being processed, try it later")
 
-		repo.Wg.Wait()
-		repo.AssertExpectations(t)
+		jobsRepo.Wg.Wait()
+		channelRepo.Wg.Wait()
+
+		jobsRepo.AssertExpectations(t)
+		channelDownloader.AssertExpectations(t)
+		channelRepo.AssertExpectations(t)
 	})
 
 	t.Run("when the processor is ready", func(t *testing.T) {
-		repo := new(mocks.JobRepositoryMock)
-		repo.Wg.Add(2)
-		repo.On("GetLastJob").Return(lastJob, nil).Once()
-		repo.On("GetLastJob").Return(lastJob2, nil).Once()
+		jobsRepo := new(mocks.JobRepositoryMock)
+		jobsRepo.Wg.Add(2)
+		jobsRepo.On("GetLastJob").Return(lastJob, nil).Once()
+		jobsRepo.On("GetLastJob").Return(lastJob2, nil).Once()
 
-		jp := NewJobProcessor(logger, repo)
+		channelList := channel.List{}
+
+		channelDownloader := new(mocks.ChannelDownloaderMock)
+		channelDownloader.On("DownloadChannelList").Return(channelList, nil).Twice()
+
+		channelRepo := new(mocks.ChannelRepositoryMock)
+		channelRepo.Wg.Add(2)
+		channelRepo.On("StoreChannelList", channelList).Return(nil).Twice()
+
+		jp := NewJobProcessor(logger, jobsRepo, channelRepo, channelDownloader)
 		jp.WaitForJobs()
 
 		err = jp.ProcessNewJob(lastJob.UUID())
 		assert.NoError(t, err, "unexpected error", err)
-		time.Sleep(time.Millisecond) // wait for processor to get ready - TODO do it better way later
+		time.Sleep(1 * time.Millisecond) // wait for processor to get ready - TODO: do it better later?
 		err = jp.ProcessNewJob(lastJob2.UUID())
 		assert.NoError(t, err, "unexpected error", err)
 
-		repo.Wg.Wait()
-		repo.AssertExpectations(t)
+		jobsRepo.Wg.Wait()
+		channelRepo.Wg.Wait()
+
+		jobsRepo.AssertExpectations(t)
+		channelDownloader.AssertExpectations(t)
+		channelRepo.AssertExpectations(t)
 	})
 }

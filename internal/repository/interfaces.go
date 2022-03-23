@@ -4,6 +4,7 @@ import (
 	"context"
 	"time"
 
+	"github.com/KompiTech/itsm-reporting-service/internal/domain/channel"
 	"github.com/KompiTech/itsm-reporting-service/internal/domain/job"
 	"github.com/KompiTech/itsm-reporting-service/internal/domain/ref"
 	"github.com/KompiTech/itsm-reporting-service/internal/domain/types"
@@ -34,4 +35,13 @@ type JobRepository interface {
 
 	// ListJobs returns the list of jobs from the repository
 	ListJobs(ctx context.Context) ([]job.Job, error)
+}
+
+// ChannelRepository provides access to the channel repository
+type ChannelRepository interface {
+	// StoreChannelList stores list of channels to the repository
+	StoreChannelList(ctx context.Context, channelList channel.List) error
+
+	// GetChannelList returns the list of channels from the repository
+	GetChannelList(ctx context.Context) (channel.List, error)
 }
