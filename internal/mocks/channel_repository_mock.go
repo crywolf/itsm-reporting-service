@@ -2,7 +2,6 @@ package mocks
 
 import (
 	"context"
-	"sync"
 
 	"github.com/KompiTech/itsm-reporting-service/internal/domain/channel"
 	"github.com/stretchr/testify/mock"
@@ -11,11 +10,9 @@ import (
 // ChannelRepositoryMock is a channel repository mock
 type ChannelRepositoryMock struct {
 	mock.Mock
-	Wg sync.WaitGroup
 }
 
 func (m *ChannelRepositoryMock) StoreChannelList(_ context.Context, channelList channel.List) error {
-	defer m.Wg.Done()
 	args := m.Called(channelList)
 	return args.Error(0)
 }

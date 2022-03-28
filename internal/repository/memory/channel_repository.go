@@ -7,13 +7,13 @@ import (
 	"github.com/KompiTech/itsm-reporting-service/internal/repository"
 )
 
-type channelRepositoryMemory struct {
-	channelList channel.List
-}
-
-// NewChannelRepositoryMemory returns new initialized repository
+// NewChannelRepositoryMemory returns new initialized channel repository that keeps data in memory
 func NewChannelRepositoryMemory() repository.ChannelRepository {
 	return &channelRepositoryMemory{}
+}
+
+type channelRepositoryMemory struct {
+	channelList channel.List
 }
 
 func (r *channelRepositoryMemory) StoreChannelList(_ context.Context, channelList channel.List) error {

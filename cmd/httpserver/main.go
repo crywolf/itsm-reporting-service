@@ -11,7 +11,9 @@ import (
 	chandownloader "github.com/KompiTech/itsm-reporting-service/internal/domain/channel/downloader"
 	"github.com/KompiTech/itsm-reporting-service/internal/domain/job/processor"
 	jobsvc "github.com/KompiTech/itsm-reporting-service/internal/domain/job/service"
+	ticketdownloader "github.com/KompiTech/itsm-reporting-service/internal/domain/ticket/downloader"
 	"github.com/KompiTech/itsm-reporting-service/internal/domain/types"
+	userdownloader "github.com/KompiTech/itsm-reporting-service/internal/domain/user/downloader"
 	"github.com/KompiTech/itsm-reporting-service/internal/http/rest"
 	"github.com/KompiTech/itsm-reporting-service/internal/repository/memory"
 	"github.com/spf13/viper"
@@ -42,8 +44,12 @@ func main() {
 	jobRepository := memory.NewJobRepositoryMemory(clock)
 	jobService := jobsvc.NewJobService(jobRepository)
 	channelRepository := memory.NewChannelRepositoryMemory()
-	channelDownloader := chandownloader.NewChannelDownloader()
-	jobProcessor := jobprocessor.NewJobProcessor(logger, jobRepository, channelRepository, channelDownloader)
+	channelDownloader := chandownloader.NewChannelDownloader(channelRepository)
+	userRepository := memory.NewUserRepositoryMemory()
+	userDownloader := userdownloader.NewUserDownloader(channelRepository, userRepository)
+	ticketRepository := memory.NewTicketRepositoryMemory()
+	ticketDownloader := ticketdownloader.NewTicketDownloader(channelRepository, userRepository, ticketRepository)
+	jobProcessor := jobprocessor.NewJobProcessor(logger, jobRepository, channelDownloader, userDownloader, ticketDownloader)
 
 	// HTTP server
 	server := rest.NewServer(rest.Config{

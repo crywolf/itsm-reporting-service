@@ -14,7 +14,6 @@ import (
 func TestJobRepositoryMemory_AddingAndGettingJob(t *testing.T) {
 	clock := mocks.NewFixedClock()
 	ctx := context.Background()
-
 	repo := NewJobRepositoryMemory(clock)
 
 	job1 := job.Job{}

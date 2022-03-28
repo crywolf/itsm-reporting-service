@@ -1,7 +1,8 @@
 package mocks
 
 import (
-	"github.com/KompiTech/itsm-reporting-service/internal/domain/channel"
+	"context"
+
 	"github.com/stretchr/testify/mock"
 )
 
@@ -10,9 +11,9 @@ type ChannelDownloaderMock struct {
 	mock.Mock
 }
 
-func (m *ChannelDownloaderMock) DownloadChannelList() (channel.List, error) {
+func (m *ChannelDownloaderMock) DownloadChannelList(_ context.Context) error {
 	args := m.Called()
-	return args.Get(0).(channel.List), args.Error(1)
+	return args.Error(0)
 }
 
 func (m *ChannelDownloaderMock) Close() error { return nil }

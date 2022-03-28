@@ -11,7 +11,6 @@ import (
 
 func TestChannelRepositoryMemory_StoringAndGettingChannelList(t *testing.T) {
 	ctx := context.Background()
-
 	repo := NewChannelRepositoryMemory()
 
 	ch1 := channel.Channel{

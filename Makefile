@@ -1,5 +1,5 @@
 test:
-	go test -v -race -timeout 10s ./internal/...
+	go test -v -count=1 -race -timeout 10s ./internal/...
 
 test-all: test
 

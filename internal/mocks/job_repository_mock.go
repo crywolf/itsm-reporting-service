@@ -2,7 +2,6 @@ package mocks
 
 import (
 	"context"
-	"sync"
 
 	"github.com/KompiTech/itsm-reporting-service/internal/domain/job"
 	"github.com/KompiTech/itsm-reporting-service/internal/domain/ref"
@@ -12,7 +11,6 @@ import (
 // JobRepositoryMock is a job repository mock
 type JobRepositoryMock struct {
 	mock.Mock
-	Wg sync.WaitGroup
 }
 
 func (m *JobRepositoryMock) AddJob(_ context.Context, job job.Job) (ref.UUID, error) {
@@ -31,7 +29,6 @@ func (m *JobRepositoryMock) GetJob(_ context.Context, ID ref.UUID) (job.Job, err
 }
 
 func (m *JobRepositoryMock) GetLastJob(_ context.Context) (job.Job, error) {
-	defer m.Wg.Done()
 	args := m.Called()
 	return args.Get(0).(job.Job), args.Error(1)
 }

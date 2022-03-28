@@ -8,6 +8,8 @@ import (
 	"github.com/KompiTech/itsm-reporting-service/internal/domain"
 	chandownloader "github.com/KompiTech/itsm-reporting-service/internal/domain/channel/downloader"
 	"github.com/KompiTech/itsm-reporting-service/internal/domain/ref"
+	ticketdownloader "github.com/KompiTech/itsm-reporting-service/internal/domain/ticket/downloader"
+	userdownloader "github.com/KompiTech/itsm-reporting-service/internal/domain/user/downloader"
 	"github.com/KompiTech/itsm-reporting-service/internal/repository"
 	"go.uber.org/zap"
 )
@@ -25,14 +27,16 @@ var ErrorBusy = domain.NewErrorf(domain.ErrorJobsProcessorIsBusy, "job is being 
 func NewJobProcessor(
 	logger *zap.SugaredLogger,
 	jobRepository repository.JobRepository,
-	channelRepository repository.ChannelRepository,
 	channelDownloader chandownloader.ChannelDownloader,
+	userDownloader userdownloader.UserDownloader,
+	ticketDownloader ticketdownloader.TicketDownloader,
 ) JobProcessor {
 	return &processor{
 		logger:            logger,
 		jobRepository:     jobRepository,
-		channelRepository: channelRepository,
 		channelDownloader: channelDownloader,
+		userDownloader:    userDownloader,
+		ticketDownloader:  ticketDownloader,
 		jobQueue:          make(chan struct{}, 1),
 	}
 }
@@ -40,8 +44,9 @@ func NewJobProcessor(
 type processor struct {
 	logger            *zap.SugaredLogger
 	jobRepository     repository.JobRepository
-	channelRepository repository.ChannelRepository
 	channelDownloader chandownloader.ChannelDownloader
+	userDownloader    userdownloader.UserDownloader
+	ticketDownloader  ticketdownloader.TicketDownloader
 	jobQueue          chan struct{}
 	mu                sync.Mutex
 	ready             bool
@@ -79,7 +84,7 @@ func (p *processor) WaitForJobs() {
 			}
 
 			if err := p.downloadTicketsFromChannels(ctx, j.UUID()); err != nil {
-				p.logger.Errorw("Ticket download failed", "error", err)
+				p.logger.Errorw("Tickets download failed", "error", err)
 				continue
 			}
 
@@ -112,12 +117,8 @@ func (p *processor) ProcessNewJob(jobID ref.UUID) error {
 func (p *processor) downloadChannelList(ctx context.Context, jobID ref.UUID) error {
 	p.logger.Infow("Starting channel list download", "time", time.Now().Format(time.RFC3339), "job", jobID)
 	//time.Sleep(1 * time.Second)
-	list, err := p.channelDownloader.DownloadChannelList()
-	if err != nil {
-		return err
-	}
 
-	if err := p.channelRepository.StoreChannelList(ctx, list); err != nil {
+	if err := p.channelDownloader.DownloadChannelList(ctx); err != nil {
 		return err
 	}
 
@@ -128,13 +129,23 @@ func (p *processor) downloadChannelList(ctx context.Context, jobID ref.UUID) err
 func (p *processor) downloadUsersFromChannels(ctx context.Context, jobID ref.UUID) error {
 	p.logger.Infow("Starting users download", "time", time.Now().Format(time.RFC3339), "job", jobID)
 	//	time.Sleep(1 * time.Second)
+
+	if err := p.userDownloader.DownloadUsers(ctx); err != nil {
+		return err
+	}
+
 	p.logger.Infow("Users downloaded", "time", time.Now().Format(time.RFC3339), "job", jobID)
 	return nil
 }
 
 func (p *processor) downloadTicketsFromChannels(ctx context.Context, jobID ref.UUID) error {
 	p.logger.Infow("Starting tickets download", "time", time.Now().Format(time.RFC3339), "job", jobID)
-	// 	time.Sleep(10 * time.Second)
+	//time.Sleep(10 * time.Second)
+
+	if err := p.ticketDownloader.DownloadTickets(ctx); err != nil {
+		return err
+	}
+
 	p.logger.Infow("Tickets downloaded", "time", time.Now().Format(time.RFC3339), "job", jobID)
 	return nil
 }

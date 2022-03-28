@@ -20,7 +20,7 @@ type jobRepositoryMemory struct {
 	jobs  []Job
 }
 
-// NewJobRepositoryMemory returns new initialized repository
+// NewJobRepositoryMemory returns new initialized job repository that keeps data in memory
 func NewJobRepositoryMemory(clock repository.Clock) repository.JobRepository {
 	return &jobRepositoryMemory{
 		clock: clock,
