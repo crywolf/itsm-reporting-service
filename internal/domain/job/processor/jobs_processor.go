@@ -2,6 +2,7 @@ package jobprocessor
 
 import (
 	"context"
+	"fmt"
 	"sync"
 	"time"
 
@@ -57,9 +58,7 @@ func (p *processor) WaitForJobs() {
 	c := make(chan struct{}, 1)
 
 	go func() {
-		p.mu.Lock()
-		p.ready = true
-		p.mu.Unlock()
+		p.markAsReady()
 
 		c <- struct{}{}
 
@@ -69,28 +68,52 @@ func (p *processor) WaitForJobs() {
 			j, err := p.jobRepository.GetLastJob(ctx)
 			if err != nil {
 				p.logger.Errorw("Getting last job from the queue failed", "error", err)
+				p.markJobAsFailed(ctx, j.UUID(), err)
+				p.markAsReady()
 				continue
 			}
 			p.logger.Infow("New job read from the queue", "time", time.Now().Format(time.RFC3339), "id", j.UUID())
 
+			if err := p.userDownloader.Reset(ctx); err != nil {
+				p.logger.Errorw("User downloader reset failed", "error", err)
+				p.markJobAsFailed(ctx, j.UUID(), err)
+				p.markAsReady()
+				continue
+			}
+
+			if err := p.ticketDownloader.Reset(ctx); err != nil {
+				p.logger.Errorw("Ticket downloader reset failed", "error", err)
+				p.markJobAsFailed(ctx, j.UUID(), err)
+				p.markAsReady()
+				continue
+			}
+
 			if err := p.downloadChannelList(ctx, j.UUID()); err != nil {
 				p.logger.Errorw("Channels download failed", "error", err)
+				p.markJobAsFailed(ctx, j.UUID(), err)
+				p.markAsReady()
 				continue
 			}
 
 			if err := p.downloadUsersFromChannels(ctx, j.UUID()); err != nil {
 				p.logger.Errorw("Users download failed", "error", err)
+				p.markJobAsFailed(ctx, j.UUID(), err)
+				p.markAsReady()
 				continue
 			}
 
 			if err := p.downloadTicketsFromChannels(ctx, j.UUID()); err != nil {
 				p.logger.Errorw("Tickets download failed", "error", err)
+				p.markJobAsFailed(ctx, j.UUID(), err)
+				p.markAsReady()
 				continue
 			}
 
-			p.mu.Lock()
-			p.ready = true
-			p.mu.Unlock()
+			// TODO Generate Excel files
+			// TODO Send emails
+
+			p.markJobAsFinished(ctx, j.UUID())
+			p.markAsReady()
 		}
 	}()
 
@@ -116,10 +139,26 @@ func (p *processor) ProcessNewJob(jobID ref.UUID) error {
 
 func (p *processor) downloadChannelList(ctx context.Context, jobID ref.UUID) error {
 	p.logger.Infow("Starting channel list download", "time", time.Now().Format(time.RFC3339), "job", jobID)
-	//time.Sleep(1 * time.Second)
+
+	j, err := p.jobRepository.GetJob(ctx, jobID)
+	if err != nil {
+		p.logger.Errorw("Could not get job for channel download update", "error", err)
+	}
+
+	j.ChannelsDownloadStartedAt.SetNow()
+
+	if _, err := p.jobRepository.UpdateJob(ctx, j); err != nil {
+		p.logger.Errorw("Could not mark job as channel download started", "error", err)
+	}
 
 	if err := p.channelDownloader.DownloadChannelList(ctx); err != nil {
 		return err
+	}
+
+	j.ChannelsDownloadFinishedAt.SetNow()
+
+	if _, err := p.jobRepository.UpdateJob(ctx, j); err != nil {
+		p.logger.Errorw("Could not mark job as channel download finished", "error", err)
 	}
 
 	p.logger.Infow("Channel list downloaded", "time", time.Now().Format(time.RFC3339), "job", jobID)
@@ -128,10 +167,26 @@ func (p *processor) downloadChannelList(ctx context.Context, jobID ref.UUID) err
 
 func (p *processor) downloadUsersFromChannels(ctx context.Context, jobID ref.UUID) error {
 	p.logger.Infow("Starting users download", "time", time.Now().Format(time.RFC3339), "job", jobID)
-	//	time.Sleep(1 * time.Second)
+
+	j, err := p.jobRepository.GetJob(ctx, jobID)
+	if err != nil {
+		p.logger.Errorw("Could not get job for user download update", "error", err)
+	}
+
+	j.UsersDownloadStartedAt.SetNow()
+
+	if _, err := p.jobRepository.UpdateJob(ctx, j); err != nil {
+		p.logger.Errorw("Could not mark job as user download started", "error", err)
+	}
 
 	if err := p.userDownloader.DownloadUsers(ctx); err != nil {
 		return err
+	}
+
+	j.UsersDownloadFinishedAt.SetNow()
+
+	if _, err := p.jobRepository.UpdateJob(ctx, j); err != nil {
+		p.logger.Errorw("Could not mark job as user download finished", "error", err)
 	}
 
 	p.logger.Infow("Users downloaded", "time", time.Now().Format(time.RFC3339), "job", jobID)
@@ -140,12 +195,60 @@ func (p *processor) downloadUsersFromChannels(ctx context.Context, jobID ref.UUI
 
 func (p *processor) downloadTicketsFromChannels(ctx context.Context, jobID ref.UUID) error {
 	p.logger.Infow("Starting tickets download", "time", time.Now().Format(time.RFC3339), "job", jobID)
-	//time.Sleep(10 * time.Second)
+
+	j, err := p.jobRepository.GetJob(ctx, jobID)
+	if err != nil {
+		p.logger.Errorw("Could not get job for ticket download update", "error", err)
+	}
+
+	j.TicketsDownloadStartedAt.SetNow()
+
+	if _, err := p.jobRepository.UpdateJob(ctx, j); err != nil {
+		p.logger.Errorw("Could not mark job as ticket download started", "error", err)
+	}
 
 	if err := p.ticketDownloader.DownloadTickets(ctx); err != nil {
 		return err
 	}
 
+	j.TicketsDownloadFinishedAt.SetNow()
+
+	if _, err := p.jobRepository.UpdateJob(ctx, j); err != nil {
+		p.logger.Errorw("Could not mark job as ticket download finished", "error", err)
+	}
+
 	p.logger.Infow("Tickets downloaded", "time", time.Now().Format(time.RFC3339), "job", jobID)
 	return nil
+}
+
+func (p *processor) markAsReady() {
+	p.mu.Lock()
+	p.ready = true
+	p.mu.Unlock()
+}
+
+func (p *processor) markJobAsFailed(ctx context.Context, jobID ref.UUID, jobErr error) {
+	j, err := p.jobRepository.GetJob(ctx, jobID)
+	if err != nil {
+		p.logger.Errorw("Could not mark job as failed", "error", err)
+	}
+
+	j.FinalStatus = fmt.Sprintf("Error: %s", jobErr)
+
+	if _, err := p.jobRepository.UpdateJob(ctx, j); err != nil {
+		p.logger.Errorw("Could not mark job as failed", "error", err)
+	}
+}
+
+func (p *processor) markJobAsFinished(ctx context.Context, jobID ref.UUID) {
+	j, err := p.jobRepository.GetJob(ctx, jobID)
+	if err != nil {
+		p.logger.Errorw("Could not mark job as finished", "error", err)
+	}
+
+	j.FinalStatus = "Success"
+
+	if _, err := p.jobRepository.UpdateJob(ctx, j); err != nil {
+		p.logger.Errorw("Could not mark job as finished", "error", err)
+	}
 }

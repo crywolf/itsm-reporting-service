@@ -8,5 +8,19 @@ type Job struct {
 
 	ProcessingStartedAt string
 
-	ChannelsDownloadStatus string
+	ChannelsDownloadStartedAt string
+
+	ChannelsDownloadFinishedAt string
+
+	ChannelsDownloadStatus string // TODO remove - unnecessary
+
+	UsersDownloadStartedAt string
+
+	UsersDownloadFinishedAt string
+
+	TicketsDownloadStartedAt string
+
+	TicketsDownloadFinishedAt string
+
+	FinalStatus string
 }

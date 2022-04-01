@@ -5,6 +5,10 @@ import "time"
 // DateTime is RFC3339 time format
 type DateTime string
 
+func (t *DateTime) SetNow() {
+	*t = (DateTime)(time.Now().Format(time.RFC3339))
+}
+
 func (t DateTime) String() string {
 	return string(t)
 }

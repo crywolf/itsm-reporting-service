@@ -17,8 +17,29 @@ type Job struct {
 	// Time when the job processing started
 	ProcessingStartedAt types.DateTime
 
+	// Time when the channels download started
+	ChannelsDownloadStartedAt types.DateTime
+
+	// Time when the channels download finished
+	ChannelsDownloadFinishedAt types.DateTime
+
 	// Status of the channel list download (success/error)
-	ChannelsDownloadStatus string
+	ChannelsDownloadStatus string // TODO remove - unnecessary
+
+	// Time when the users download started
+	UsersDownloadStartedAt types.DateTime
+
+	// Time when the users download finished
+	UsersDownloadFinishedAt types.DateTime
+
+	// Time when the tickets download started
+	TicketsDownloadStartedAt types.DateTime
+
+	// Time when the tickets download finished
+	TicketsDownloadFinishedAt types.DateTime
+
+	// Status of the finished job (success/error)
+	FinalStatus string
 }
 
 // UUID getter

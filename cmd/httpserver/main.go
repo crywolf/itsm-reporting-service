@@ -9,6 +9,7 @@ import (
 	"time"
 
 	chandownloader "github.com/KompiTech/itsm-reporting-service/internal/domain/channel/downloader"
+	"github.com/KompiTech/itsm-reporting-service/internal/domain/client"
 	"github.com/KompiTech/itsm-reporting-service/internal/domain/job/processor"
 	jobsvc "github.com/KompiTech/itsm-reporting-service/internal/domain/job/service"
 	ticketdownloader "github.com/KompiTech/itsm-reporting-service/internal/domain/ticket/downloader"
@@ -43,12 +44,22 @@ func main() {
 	clock := realClock{}
 	jobRepository := memory.NewJobRepositoryMemory(clock)
 	jobService := jobsvc.NewJobService(jobRepository)
+
 	channelRepository := memory.NewChannelRepositoryMemory()
-	channelDownloader := chandownloader.NewChannelDownloader(channelRepository)
+	channelClient := chandownloader.NewChannelClient(client.NewHTTPClient(viper.GetString("ChannelEndpointURI")))
+	channelDownloader := chandownloader.NewChannelDownloader(channelRepository, channelClient)
+
 	userRepository := memory.NewUserRepositoryMemory()
-	userDownloader := userdownloader.NewUserDownloader(channelRepository, userRepository)
+	userClient := userdownloader.NewUserClient(client.NewHTTPClient(viper.GetString("UserEndpointURI")))
+	userDownloader := userdownloader.NewUserDownloader(channelRepository, userRepository, userClient)
+
 	ticketRepository := memory.NewTicketRepositoryMemory()
-	ticketDownloader := ticketdownloader.NewTicketDownloader(channelRepository, userRepository, ticketRepository)
+	ticketClient := ticketdownloader.NewTicketClient(
+		client.NewHTTPClient(viper.GetString("IncidentEndpointURI")),
+		client.NewHTTPClient(viper.GetString("RequestEndpointURI")),
+	)
+	ticketDownloader := ticketdownloader.NewTicketDownloader(channelRepository, userRepository, ticketRepository, ticketClient)
+
 	jobProcessor := jobprocessor.NewJobProcessor(logger, jobRepository, channelDownloader, userDownloader, ticketDownloader)
 
 	// HTTP server
@@ -92,6 +103,18 @@ func main() {
 		logger.Info("Closing ChannelDownloader client")
 		if err := channelDownloader.Close(); err != nil {
 			logger.Error("error closing ChannelDownloader client", zap.Error(err))
+		}
+
+		// Close connection to external user service
+		logger.Info("Closing UserDownloader client")
+		if err := userDownloader.Close(); err != nil {
+			logger.Error("error closing UserDownloader client", zap.Error(err))
+		}
+
+		// Close connection to external ticket service
+		logger.Info("Closing TicketDownloader client")
+		if err := ticketDownloader.Close(); err != nil {
+			logger.Error("error closing TicketDownloader client", zap.Error(err))
 		}
 
 		close(idleConnsClosed)

@@ -21,6 +21,7 @@ func (s *Server) CreateJob() func(http.ResponseWriter, *http.Request, httprouter
 		if err = s.jobsProcessor.ProcessNewJob(newID); err != nil {
 			s.logger.Errorw("CreateJob handler failed", "error", err)
 			s.jobsPresenter.RenderError(w, "", err)
+			// TODO delete the unprocessed job (or mark it)
 			return
 		}
 

@@ -55,6 +55,9 @@ type UserRepository interface {
 
 	// GetUsersByChannel returns users in the specified channel from the repository
 	GetUsersByChannel(ctx context.Context, channelID string) (user.List, error)
+
+	// Truncate removes all items from repository
+	Truncate(ctx context.Context) error
 }
 
 // TicketRepository provides access to the ticker repository
@@ -64,4 +67,7 @@ type TicketRepository interface {
 
 	// GetTicketsByEmail returns tickets for the specified user's email from the repository
 	GetTicketsByEmail(ctx context.Context, userEmail string) (ticket.List, error)
+
+	// Truncate removes all items from repository
+	Truncate(ctx context.Context) error
 }

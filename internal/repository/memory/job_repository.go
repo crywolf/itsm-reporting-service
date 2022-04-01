@@ -53,10 +53,17 @@ func (r *jobRepositoryMemory) AddJob(_ context.Context, _ job.Job) (ref.UUID, er
 // UpdateJob updates the given job in the repository
 func (r *jobRepositoryMemory) UpdateJob(_ context.Context, job job.Job) (ref.UUID, error) {
 	storedJob := Job{
-		ID:                     job.UUID().String(),
-		ProcessingStartedAt:    job.ProcessingStartedAt.String(),
-		ChannelsDownloadStatus: job.ChannelsDownloadStatus,
-		CreatedAt:              job.CreatedAt.String(),
+		ID:                         job.UUID().String(),
+		CreatedAt:                  job.CreatedAt.String(),
+		ProcessingStartedAt:        job.ProcessingStartedAt.String(),
+		ChannelsDownloadStartedAt:  job.ChannelsDownloadStartedAt.String(),
+		ChannelsDownloadFinishedAt: job.ChannelsDownloadFinishedAt.String(),
+		ChannelsDownloadStatus:     job.ChannelsDownloadStatus,
+		UsersDownloadStartedAt:     job.UsersDownloadStartedAt.String(),
+		UsersDownloadFinishedAt:    job.UsersDownloadFinishedAt.String(),
+		TicketsDownloadStartedAt:   job.TicketsDownloadStartedAt.String(),
+		TicketsDownloadFinishedAt:  job.TicketsDownloadFinishedAt.String(),
+		FinalStatus:                job.FinalStatus,
 	}
 
 	for i := range r.jobs {
@@ -130,6 +137,13 @@ func (r jobRepositoryMemory) convertStoredToDomainIncident(storedJob Job) (job.J
 	j.CreatedAt = types.DateTime(storedJob.CreatedAt)
 	j.ProcessingStartedAt = types.DateTime(storedJob.ProcessingStartedAt)
 	j.ChannelsDownloadStatus = storedJob.ChannelsDownloadStatus
+	j.ChannelsDownloadStartedAt = types.DateTime(storedJob.ChannelsDownloadStartedAt)
+	j.ChannelsDownloadFinishedAt = types.DateTime(storedJob.ChannelsDownloadFinishedAt)
+	j.UsersDownloadStartedAt = types.DateTime(storedJob.UsersDownloadStartedAt)
+	j.UsersDownloadFinishedAt = types.DateTime(storedJob.UsersDownloadFinishedAt)
+	j.TicketsDownloadStartedAt = types.DateTime(storedJob.TicketsDownloadStartedAt)
+	j.TicketsDownloadFinishedAt = types.DateTime(storedJob.TicketsDownloadFinishedAt)
+	j.FinalStatus = storedJob.FinalStatus
 
 	return j, nil
 }

@@ -19,13 +19,13 @@ func (m *JobRepositoryMock) AddJob(_ context.Context, job job.Job) (ref.UUID, er
 }
 
 func (m *JobRepositoryMock) UpdateJob(_ context.Context, job job.Job) (ref.UUID, error) {
-	//TODO implement me
-	panic("implement me")
+	args := m.Called(job)
+	return args.Get(0).(ref.UUID), args.Error(1)
 }
 
 func (m *JobRepositoryMock) GetJob(_ context.Context, ID ref.UUID) (job.Job, error) {
-	//TODO implement me
-	panic("implement me")
+	args := m.Called(ID)
+	return args.Get(0).(job.Job), args.Error(1)
 }
 
 func (m *JobRepositoryMock) GetLastJob(_ context.Context) (job.Job, error) {

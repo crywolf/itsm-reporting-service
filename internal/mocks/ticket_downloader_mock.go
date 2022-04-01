@@ -19,4 +19,6 @@ func (m *TicketDownloaderMock) DownloadTickets(_ context.Context) error {
 	return args.Error(0)
 }
 
+func (m *TicketDownloaderMock) Reset(_ context.Context) error { return nil }
+
 func (m *TicketDownloaderMock) Close() error { return nil }

@@ -56,10 +56,25 @@ func TestTicketRepositoryMemory_AddingAndGettingTickets(t *testing.T) {
 	err := repo.AddTicketList(ctx, list)
 	require.NoError(t, err)
 
+	t5 := ticket.Ticket{
+		UserEmail:   "second@user.com",
+		ChannelName: "Other Channel",
+		TicketType:  "incident",
+		TicketData: ticket.Data{
+			Number:           "INC66666",
+			ShortDescription: "Inc 66666",
+		},
+	}
+
+	list2 := ticket.List{t5}
+	err = repo.AddTicketList(ctx, list2)
+	require.NoError(t, err)
+
 	retTicketList, err := repo.GetTicketsByEmail(ctx, email)
 	require.NoError(t, err)
 
-	assert.Len(t, retTicketList, 2)
+	assert.Len(t, retTicketList, 3)
 	assert.Equal(t, t2, retTicketList[0])
 	assert.Equal(t, t3, retTicketList[1])
+	assert.Equal(t, t5, retTicketList[2])
 }
