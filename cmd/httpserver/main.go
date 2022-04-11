@@ -45,18 +45,20 @@ func main() {
 	jobRepository := memory.NewJobRepositoryMemory(clock)
 	jobService := jobsvc.NewJobService(jobRepository)
 
+	tokenSvcClient := client.NewTokenSvcClient()
+
 	channelRepository := memory.NewChannelRepositoryMemory()
-	channelClient := chandownloader.NewChannelClient(client.NewHTTPClient(viper.GetString("ChannelEndpointURI")))
+	channelClient := chandownloader.NewChannelClient(client.NewHTTPClient(viper.GetString("ChannelEndpointURI"), logger, tokenSvcClient))
 	channelDownloader := chandownloader.NewChannelDownloader(channelRepository, channelClient)
 
 	userRepository := memory.NewUserRepositoryMemory()
-	userClient := userdownloader.NewUserClient(client.NewHTTPClient(viper.GetString("UserEndpointURI")))
+	userClient := userdownloader.NewUserClient(client.NewHTTPClient(viper.GetString("UserEndpointURI"), logger, tokenSvcClient))
 	userDownloader := userdownloader.NewUserDownloader(channelRepository, userRepository, userClient)
 
 	ticketRepository := memory.NewTicketRepositoryMemory()
 	ticketClient := ticketdownloader.NewTicketClient(
-		client.NewHTTPClient(viper.GetString("IncidentEndpointURI")),
-		client.NewHTTPClient(viper.GetString("RequestEndpointURI")),
+		client.NewHTTPClient(viper.GetString("IncidentEndpointURI"), logger, tokenSvcClient),
+		client.NewHTTPClient(viper.GetString("RequestEndpointURI"), logger, tokenSvcClient),
 	)
 	ticketDownloader := ticketdownloader.NewTicketDownloader(channelRepository, userRepository, ticketRepository, ticketClient)
 

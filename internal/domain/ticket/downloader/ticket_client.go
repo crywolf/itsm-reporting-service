@@ -3,7 +3,6 @@ package ticketdownloader
 import (
 	"context"
 	"encoding/json"
-	"fmt"
 	"net/http"
 	"strings"
 
@@ -55,11 +54,13 @@ func (c ticketClient) GetIncidents(ctx context.Context, channel channel.Channel,
 			return ticketList, domain.WrapErrorf(err, domain.ErrorCodeUnknown, "could not decode incident service Ok response")
 		}
 
-		fmt.Println(">> GetIncidents for ", user.Name, len(ticketList), bookmark)
+		// TODO - delete
+		//fmt.Println(">> GetIncidents for", user.Name, len(ticketList), bookmark)
 		if len(ticketList) < 10 {
 			break
 		}
 	}
+
 	return ticketList, nil
 }
 
@@ -80,11 +81,12 @@ func (c ticketClient) GetRequests(ctx context.Context, channel channel.Channel, 
 			return ticketList, domain.WrapErrorf(err, domain.ErrorCodeUnknown, "could not decode request service Ok response")
 		}
 
+		//fmt.Println(">> GetRequests for", user.Name, len(ticketList), bookmark)
 		if len(ticketList) < 10 {
 			break
 		}
-
 	}
+
 	return ticketList, nil
 }
 
@@ -100,7 +102,9 @@ func (c *ticketClient) Close() error {
 
 func (c ticketClient) preparePayload(user user.User, bookmark string) string {
 	// state_id: 4 = Resolved, 5 = Closed, 6 = Cancelled
-	return `{"selector":{"$and":[{"state_id":{"$ne":4}},{"state_id":{"$ne":5}},{"state_id":{"$ne":6}}],"assigned_to":"` + user.UserID + `"},"fields":["uuid","number","short_description"],"bookmark":"` + bookmark + `"}`
+	//	return `{"selector":{"$and":[{"state_id":{"$ne":4}},{"state_id":{"$ne":5}},{"state_id":{"$ne":6}}],"assigned_to":"` + user.UserID + `"},"fields":["uuid","number","short_description"],"bookmark":"` + bookmark + `"}`
+
+	return `{"selector":{"assigned_to":"` + user.UserID + `"},"fields":["uuid","number","short_description"],"bookmark":"` + bookmark + `"}`
 }
 
 func (c ticketClient) processResponse(resp *http.Response, user user.User, channel channel.Channel) (ticketList ticket.List, bookmark string, err error) {
@@ -114,12 +118,12 @@ func (c ticketClient) processResponse(resp *http.Response, user user.User, chann
 	}
 	var okPayload OKPayload
 
-	bookmark = okPayload.Bookmark
-
 	defer func() { _ = resp.Body.Close() }()
 	if err = json.NewDecoder(resp.Body).Decode(&okPayload); err != nil {
 		return ticketList, bookmark, err
 	}
+
+	bookmark = okPayload.Bookmark
 
 	for _, v := range okPayload.Result {
 		ticketList = append(ticketList, ticket.Ticket{

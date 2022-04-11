@@ -58,7 +58,8 @@ func (d *ticketDownloader) DownloadTickets(ctx context.Context) error {
 				return err
 			}
 
-			fmt.Println("---> returned INCIDENTS for user:", user.Email, user.Name, len(ticketList))
+			// TODO - delete
+			//fmt.Println("---> returned INCIDENTS for user:", user.Email, user.Name, len(ticketList))
 
 			if err := d.ticketRepository.AddTicketList(ctx, ticketList); err != nil {
 				return err
@@ -69,7 +70,8 @@ func (d *ticketDownloader) DownloadTickets(ctx context.Context) error {
 				return err
 			}
 
-			fmt.Println("---> returned REQUESTS for user:", user.Email, user.Name, len(ticketList))
+			// TODO - delete
+			//fmt.Println("---> returned REQUESTS for user:", user.Email, user.Name, len(ticketList))
 
 			if err := d.ticketRepository.AddTicketList(ctx, ticketList); err != nil {
 				return err
