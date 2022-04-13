@@ -48,7 +48,8 @@ func (d *ticketDownloader) DownloadTickets(ctx context.Context) error {
 			return err
 		}
 
-		fmt.Println("\n>>> len(userList):", len(userList))
+		// TODO - remove
+		//fmt.Println("\n>>> len(userList):", len(userList))
 
 		var ticketList ticket.List
 

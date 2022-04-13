@@ -10,6 +10,7 @@ import (
 
 	chandownloader "github.com/KompiTech/itsm-reporting-service/internal/domain/channel/downloader"
 	"github.com/KompiTech/itsm-reporting-service/internal/domain/client"
+	"github.com/KompiTech/itsm-reporting-service/internal/domain/excel"
 	"github.com/KompiTech/itsm-reporting-service/internal/domain/job/processor"
 	jobsvc "github.com/KompiTech/itsm-reporting-service/internal/domain/job/service"
 	ticketdownloader "github.com/KompiTech/itsm-reporting-service/internal/domain/ticket/downloader"
@@ -62,7 +63,9 @@ func main() {
 	)
 	ticketDownloader := ticketdownloader.NewTicketDownloader(channelRepository, userRepository, ticketRepository, ticketClient)
 
-	jobProcessor := jobprocessor.NewJobProcessor(logger, jobRepository, channelDownloader, userDownloader, ticketDownloader)
+	excelGen := excel.NewExcelGenerator(ticketRepository)
+
+	jobProcessor := jobprocessor.NewJobProcessor(logger, jobRepository, channelDownloader, userDownloader, ticketDownloader, excelGen)
 
 	// HTTP server
 	server := rest.NewServer(rest.Config{

@@ -60,14 +60,18 @@ type UserRepository interface {
 	Truncate(ctx context.Context) error
 }
 
-// TicketRepository provides access to the ticker repository
+// TicketRepository provides access to the ticket repository
 type TicketRepository interface {
 	// AddTicketList adds list of tickets to the repository
 	AddTicketList(ctx context.Context, ticketList ticket.List) error
 
-	// GetTicketsByEmail returns tickets for the specified user's email from the repository
+	// GetTicketsByEmail returns tickets for the specified user's email from the repository. It sorts the returned list,
+	// first are Incidents, then Requests
 	GetTicketsByEmail(ctx context.Context, userEmail string) (ticket.List, error)
 
-	// Truncate removes all items from repository
+	// GetDistinctEmails returns distinct email addresses from the repository
+	GetDistinctEmails(ctx context.Context) ([]string, error)
+
+	// Truncate removes all items from the repository
 	Truncate(ctx context.Context) error
 }

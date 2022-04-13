@@ -22,5 +22,9 @@ type Job struct {
 
 	TicketsDownloadFinishedAt string
 
+	ExcelFilesGenerationStartedAt string
+
+	ExcelFilesGenerationFinishedAt string
+
 	FinalStatus string
 }

@@ -35,9 +35,9 @@ func (c userClient) GetEngineers(ctx context.Context, channel channel.Channel) (
 	var bookmark string
 
 	for {
-		//payload := `{"selector":{"$or":[{"type": "engineer"},{"type": "engineer-manager"}]},"fields":["uuid","full_name","email","type"],"bookmark":"` + bookmark + `"}`
-
-		payload := `{"selector":{},"fields":["uuid","full_name","email","type"],"bookmark":"` + bookmark + `"}`
+		// TODO
+		payload := `{"selector":{"$or":[{"type": "engineer"},{"type": "engineer-manager"}]},"fields":["uuid","full_name","email","type"],"bookmark":"` + bookmark + `"}`
+		//payload := `{"selector":{},"fields":["uuid","full_name","email","type"],"bookmark":"` + bookmark + `"}`
 		body := strings.NewReader(payload)
 		resp, err := c.Query(ctx, channel.ChannelID, body)
 		if err != nil {

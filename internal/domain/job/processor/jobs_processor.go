@@ -8,6 +8,7 @@ import (
 
 	"github.com/KompiTech/itsm-reporting-service/internal/domain"
 	chandownloader "github.com/KompiTech/itsm-reporting-service/internal/domain/channel/downloader"
+	"github.com/KompiTech/itsm-reporting-service/internal/domain/excel"
 	"github.com/KompiTech/itsm-reporting-service/internal/domain/ref"
 	ticketdownloader "github.com/KompiTech/itsm-reporting-service/internal/domain/ticket/downloader"
 	userdownloader "github.com/KompiTech/itsm-reporting-service/internal/domain/user/downloader"
@@ -31,6 +32,7 @@ func NewJobProcessor(
 	channelDownloader chandownloader.ChannelDownloader,
 	userDownloader userdownloader.UserDownloader,
 	ticketDownloader ticketdownloader.TicketDownloader,
+	excelGenerator excel.Generator,
 ) JobProcessor {
 	return &processor{
 		logger:            logger,
@@ -38,6 +40,7 @@ func NewJobProcessor(
 		channelDownloader: channelDownloader,
 		userDownloader:    userDownloader,
 		ticketDownloader:  ticketDownloader,
+		excelGenerator:    excelGenerator,
 		jobQueue:          make(chan struct{}, 1),
 	}
 }
@@ -48,6 +51,7 @@ type processor struct {
 	channelDownloader chandownloader.ChannelDownloader
 	userDownloader    userdownloader.UserDownloader
 	ticketDownloader  ticketdownloader.TicketDownloader
+	excelGenerator    excel.Generator
 	jobQueue          chan struct{}
 	mu                sync.Mutex
 	ready             bool
@@ -109,7 +113,13 @@ func (p *processor) WaitForJobs() {
 				continue
 			}
 
-			// TODO Generate Excel files
+			if err := p.generateExcelFiles(ctx, j.UUID()); err != nil {
+				p.logger.Errorw("Excel files generation failed", "error", err)
+				p.markJobAsFailed(ctx, j.UUID(), err)
+				p.markAsReady()
+				continue
+			}
+
 			// TODO Send emails
 
 			p.markJobAsFinished(ctx, j.UUID())
@@ -218,6 +228,34 @@ func (p *processor) downloadTicketsFromChannels(ctx context.Context, jobID ref.U
 	}
 
 	p.logger.Infow("Tickets downloaded", "time", time.Now().Format(time.RFC3339), "job", jobID)
+	return nil
+}
+
+func (p *processor) generateExcelFiles(ctx context.Context, jobID ref.UUID) error {
+	p.logger.Infow("Starting Excel files generation", "time", time.Now().Format(time.RFC3339), "job", jobID)
+
+	j, err := p.jobRepository.GetJob(ctx, jobID)
+	if err != nil {
+		p.logger.Errorw("Could not get job for Excel files generation update", "error", err)
+	}
+
+	j.ExcelFilesGenerationStartedAt.SetNow()
+
+	if _, err := p.jobRepository.UpdateJob(ctx, j); err != nil {
+		p.logger.Errorw("Could not mark job as Excel files generation started", "error", err)
+	}
+
+	if err := p.excelGenerator.GenerateExcelFiles(ctx); err != nil {
+		return err
+	}
+
+	j.ExcelFilesGenerationFinishedAt.SetNow()
+
+	if _, err := p.jobRepository.UpdateJob(ctx, j); err != nil {
+		p.logger.Errorw("Could not mark job as Excel files generation finished", "error", err)
+	}
+
+	p.logger.Infow("Excel files generated", "time", time.Now().Format(time.RFC3339), "job", jobID)
 	return nil
 }
 

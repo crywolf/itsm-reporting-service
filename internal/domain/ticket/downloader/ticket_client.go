@@ -101,10 +101,13 @@ func (c *ticketClient) Close() error {
 }
 
 func (c ticketClient) preparePayload(user user.User, bookmark string) string {
-	// state_id: 4 = Resolved, 5 = Closed, 6 = Cancelled
-	//	return `{"selector":{"$and":[{"state_id":{"$ne":4}},{"state_id":{"$ne":5}},{"state_id":{"$ne":6}}],"assigned_to":"` + user.UserID + `"},"fields":["uuid","number","short_description"],"bookmark":"` + bookmark + `"}`
+	// TODO
 
-	return `{"selector":{"assigned_to":"` + user.UserID + `"},"fields":["uuid","number","short_description"],"bookmark":"` + bookmark + `"}`
+	// state_id: 4 = Resolved, 5 = Closed, 6 = Cancelled
+	return `{"selector":{"$and":[{"state_id":{"$ne":4}},{"state_id":{"$ne":5}},{"state_id":{"$ne":6}}],"assigned_to":"` +
+		user.UserID + `"},"fields":["uuid","number","short_description","state_id"],"bookmark":"` + bookmark + `"}`
+
+	//	return `{"selector":{"assigned_to":"` + user.UserID + `"},"fields":["uuid","number","short_description","state_id"],"bookmark":"` + bookmark + `"}`
 }
 
 func (c ticketClient) processResponse(resp *http.Response, user user.User, channel channel.Channel) (ticketList ticket.List, bookmark string, err error) {
@@ -114,6 +117,7 @@ func (c ticketClient) processResponse(resp *http.Response, user user.User, chann
 			TicketType       string `json:"docType"`
 			Number           string `json:"number"`
 			ShortDescription string `json:"short_description"`
+			StateID          int    `json:"state_id"`
 		} `json:"result"`
 	}
 	var okPayload OKPayload
@@ -133,6 +137,7 @@ func (c ticketClient) processResponse(resp *http.Response, user user.User, chann
 			TicketData: ticket.Data{
 				Number:           v.Number,
 				ShortDescription: v.ShortDescription,
+				StateID:          v.StateID,
 			},
 		},
 		)

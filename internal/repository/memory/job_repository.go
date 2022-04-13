@@ -53,17 +53,19 @@ func (r *jobRepositoryMemory) AddJob(_ context.Context, _ job.Job) (ref.UUID, er
 // UpdateJob updates the given job in the repository
 func (r *jobRepositoryMemory) UpdateJob(_ context.Context, job job.Job) (ref.UUID, error) {
 	storedJob := Job{
-		ID:                         job.UUID().String(),
-		CreatedAt:                  job.CreatedAt.String(),
-		ProcessingStartedAt:        job.ProcessingStartedAt.String(),
-		ChannelsDownloadStartedAt:  job.ChannelsDownloadStartedAt.String(),
-		ChannelsDownloadFinishedAt: job.ChannelsDownloadFinishedAt.String(),
-		ChannelsDownloadStatus:     job.ChannelsDownloadStatus,
-		UsersDownloadStartedAt:     job.UsersDownloadStartedAt.String(),
-		UsersDownloadFinishedAt:    job.UsersDownloadFinishedAt.String(),
-		TicketsDownloadStartedAt:   job.TicketsDownloadStartedAt.String(),
-		TicketsDownloadFinishedAt:  job.TicketsDownloadFinishedAt.String(),
-		FinalStatus:                job.FinalStatus,
+		ID:                             job.UUID().String(),
+		CreatedAt:                      job.CreatedAt.String(),
+		ProcessingStartedAt:            job.ProcessingStartedAt.String(),
+		ChannelsDownloadStartedAt:      job.ChannelsDownloadStartedAt.String(),
+		ChannelsDownloadFinishedAt:     job.ChannelsDownloadFinishedAt.String(),
+		ChannelsDownloadStatus:         job.ChannelsDownloadStatus,
+		UsersDownloadStartedAt:         job.UsersDownloadStartedAt.String(),
+		UsersDownloadFinishedAt:        job.UsersDownloadFinishedAt.String(),
+		TicketsDownloadStartedAt:       job.TicketsDownloadStartedAt.String(),
+		TicketsDownloadFinishedAt:      job.TicketsDownloadFinishedAt.String(),
+		ExcelFilesGenerationStartedAt:  job.ExcelFilesGenerationStartedAt.String(),
+		ExcelFilesGenerationFinishedAt: job.ExcelFilesGenerationFinishedAt.String(),
+		FinalStatus:                    job.FinalStatus,
 	}
 
 	for i := range r.jobs {
@@ -143,6 +145,8 @@ func (r jobRepositoryMemory) convertStoredToDomainIncident(storedJob Job) (job.J
 	j.UsersDownloadFinishedAt = types.DateTime(storedJob.UsersDownloadFinishedAt)
 	j.TicketsDownloadStartedAt = types.DateTime(storedJob.TicketsDownloadStartedAt)
 	j.TicketsDownloadFinishedAt = types.DateTime(storedJob.TicketsDownloadFinishedAt)
+	j.ExcelFilesGenerationStartedAt = types.DateTime(storedJob.ExcelFilesGenerationStartedAt)
+	j.ExcelFilesGenerationFinishedAt = types.DateTime(storedJob.ExcelFilesGenerationFinishedAt)
 	j.FinalStatus = storedJob.FinalStatus
 
 	return j, nil

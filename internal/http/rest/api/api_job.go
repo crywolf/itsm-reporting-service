@@ -43,6 +43,14 @@ type Job struct {
 	// swagger:strfmt date-time
 	TicketsDownloadFinishedAt string `json:"tickets_download_finished_at,omitempty"`
 
+	// Time when Excel files generation started
+	// swagger:strfmt date-time
+	ExcelFilesGenerationStartedAt string `json:"excel_files_generation_started_at,omitempty"`
+
+	// Time when Excel files generation finished
+	// swagger:strfmt date-time
+	ExcelFilesGenerationFinishedAt string `json:"excel_files_generation_finished_at,omitempty"`
+
 	// Status of the finished job (success/error)
 	FinalStatus string `json:"final_status,omitempty"`
 }

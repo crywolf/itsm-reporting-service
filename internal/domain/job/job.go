@@ -38,6 +38,12 @@ type Job struct {
 	// Time when the tickets download finished
 	TicketsDownloadFinishedAt types.DateTime
 
+	// Time when Excel files generation started
+	ExcelFilesGenerationStartedAt types.DateTime
+
+	// Time when Excel files generation finished
+	ExcelFilesGenerationFinishedAt types.DateTime
+
 	// Status of the finished job (success/error)
 	FinalStatus string
 }

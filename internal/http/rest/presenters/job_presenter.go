@@ -37,17 +37,19 @@ func (p jobPresenter) RenderJobList(w http.ResponseWriter, jobList []job.Job) {
 
 func (p jobPresenter) convertJobToAPI(j job.Job) api.Job {
 	apiJob := api.Job{
-		UUID:                       j.UUID().String(),
-		CreatedAt:                  j.CreatedAt.String(),
-		ProcessingStartedAt:        j.ProcessingStartedAt.String(),
-		ChannelsDownloadStatus:     j.ChannelsDownloadStatus,
-		ChannelsDownloadStartedAt:  j.ChannelsDownloadStartedAt.String(),
-		ChannelsDownloadFinishedAt: j.ChannelsDownloadFinishedAt.String(),
-		UsersDownloadStartedAt:     j.UsersDownloadStartedAt.String(),
-		UsersDownloadFinishedAt:    j.UsersDownloadFinishedAt.String(),
-		TicketsDownloadStartedAt:   j.TicketsDownloadStartedAt.String(),
-		TicketsDownloadFinishedAt:  j.TicketsDownloadFinishedAt.String(),
-		FinalStatus:                j.FinalStatus,
+		UUID:                           j.UUID().String(),
+		CreatedAt:                      j.CreatedAt.String(),
+		ProcessingStartedAt:            j.ProcessingStartedAt.String(),
+		ChannelsDownloadStatus:         j.ChannelsDownloadStatus,
+		ChannelsDownloadStartedAt:      j.ChannelsDownloadStartedAt.String(),
+		ChannelsDownloadFinishedAt:     j.ChannelsDownloadFinishedAt.String(),
+		UsersDownloadStartedAt:         j.UsersDownloadStartedAt.String(),
+		UsersDownloadFinishedAt:        j.UsersDownloadFinishedAt.String(),
+		TicketsDownloadStartedAt:       j.TicketsDownloadStartedAt.String(),
+		TicketsDownloadFinishedAt:      j.TicketsDownloadFinishedAt.String(),
+		ExcelFilesGenerationStartedAt:  j.ExcelFilesGenerationStartedAt.String(),
+		ExcelFilesGenerationFinishedAt: j.ExcelFilesGenerationFinishedAt.String(),
+		FinalStatus:                    j.FinalStatus,
 	}
 
 	return apiJob

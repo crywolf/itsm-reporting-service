@@ -15,4 +15,5 @@ type List []Ticket
 type Data struct {
 	Number           string
 	ShortDescription string
+	StateID          int
 }

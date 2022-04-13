@@ -2,7 +2,6 @@ package userdownloader
 
 import (
 	"context"
-	"fmt"
 
 	"github.com/KompiTech/itsm-reporting-service/internal/repository"
 )
@@ -40,7 +39,8 @@ func (d *userDownloader) DownloadUsers(ctx context.Context) error {
 	}
 
 	for _, channel := range channels {
-		fmt.Println("DownloadUsers - channel:", channel)
+		// TODO - remove
+		//fmt.Println("DownloadUsers - channel:", channel)
 
 		userList, err := d.client.GetEngineers(ctx, channel)
 		if err != nil {
