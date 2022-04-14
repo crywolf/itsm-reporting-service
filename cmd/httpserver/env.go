@@ -36,10 +36,10 @@ func loadEnvConfiguration() {
 	_ = viper.BindEnv("UserEndpointURI", "USER_ENDPOINT_URI")
 
 	// Incident endpoint returns info about existing incidents
-	viper.SetDefault("IncidentEndpointURI", "http://localhost:8081/api/v1/assets/incident")
+	viper.SetDefault("IncidentEndpointURI", "http://localhost:8081/api/v1/assets/incident?resolve=true")
 	_ = viper.BindEnv("IncidentEndpointURI", "INCIDENT_ENDPOINT_URI")
 
 	// Requests endpoint returns info about existing requests (i.e. k_requests)
-	viper.SetDefault("RequestEndpointURI", "http://localhost:8081/api/v1/assets/k_request")
+	viper.SetDefault("RequestEndpointURI", "http://localhost:8081/api/v1/assets/k_request?resolve=true")
 	_ = viper.BindEnv("RequestEndpointURI", "REQUEST_ENDPOINT_URI")
 }

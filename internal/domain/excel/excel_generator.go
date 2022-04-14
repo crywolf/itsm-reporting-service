@@ -43,7 +43,6 @@ func (g excelGen) GenerateExcelFiles(ctx context.Context) error {
 	}
 
 	// TODO remove all fmt.Prints
-
 	fmt.Println("\n===> GenerateExcelFiles - emails", emails)
 
 	if err = os.RemoveAll(g.dirName); err != nil {
@@ -72,26 +71,60 @@ func (g excelGen) GenerateExcelFiles(ctx context.Context) error {
 
 		f := excelize.NewFile()
 
-		// Excel file header
-		if err := f.SetCellValue("Sheet1", "A1", "Tickets for "+email); err != nil {
-			return domain.WrapErrorf(err, domain.ErrorCodeUnknown, "could not write data to Excel file '%s", filename)
+		// Set columns width
+		sheet := "Sheet1"
+		if err := f.SetColWidth(sheet, "A", "B", 13); err != nil {
+			return domain.WrapErrorf(err, domain.ErrorCodeUnknown, "could not write data to Excel file '%s'", filename)
+		}
+		if err := f.SetColWidth(sheet, "C", "D", 45); err != nil {
+			return domain.WrapErrorf(err, domain.ErrorCodeUnknown, "could not write data to Excel file '%s'", filename)
 		}
 
-		// Excel rows with ticket data
-		for i, t := range userTickets {
-			row := strconv.Itoa(i + 2)
+		// Excel file header
+		if err := f.SetCellValue(sheet, "A1", "Tickets for "+email); err != nil {
+			return domain.WrapErrorf(err, domain.ErrorCodeUnknown, "could not write data to Excel file '%s'", filename)
+		}
+		if err := f.SetCellValue(sheet, "A3", "Ticket type"); err != nil {
+			return domain.WrapErrorf(err, domain.ErrorCodeUnknown, "could not write data to Excel file '%s'", filename)
+		}
+		if err := f.SetCellValue(sheet, "B3", "Number"); err != nil {
+			return domain.WrapErrorf(err, domain.ErrorCodeUnknown, "could not write data to Excel file '%s'", filename)
+		}
+		if err := f.SetCellValue(sheet, "C3", "Short description"); err != nil {
+			return domain.WrapErrorf(err, domain.ErrorCodeUnknown, "could not write data to Excel file '%s'", filename)
+		}
+		if err := f.SetCellValue(sheet, "D3", "Location"); err != nil {
+			return domain.WrapErrorf(err, domain.ErrorCodeUnknown, "could not write data to Excel file '%s'", filename)
+		}
 
-			if err := f.SetCellValue("Sheet1", "A"+row, t.TicketType); err != nil {
-				return domain.WrapErrorf(err, domain.ErrorCodeUnknown, "could not write data to Excel file '%s", filename)
+		var channelName string
+		var row string
+		i := 3
+		// Excel rows with ticket data
+		for _, t := range userTickets {
+			i++
+			if channelName != t.ChannelName {
+				i++
+				row = strconv.Itoa(i)
+				if err := f.SetCellValue(sheet, "A"+row, "Channel: "+t.ChannelName); err != nil {
+					return domain.WrapErrorf(err, domain.ErrorCodeUnknown, "could not write data to Excel file '%s'", filename)
+				}
+				channelName = t.ChannelName
+				i += 2
 			}
-			if err := f.SetCellValue("Sheet1", "B"+row, t.ChannelName); err != nil {
-				return domain.WrapErrorf(err, domain.ErrorCodeUnknown, "could not write data to Excel file '%s", filename)
+			row = strconv.Itoa(i)
+
+			if err := f.SetCellValue(sheet, "A"+row, t.TicketType); err != nil {
+				return domain.WrapErrorf(err, domain.ErrorCodeUnknown, "could not write data to Excel file '%s'", filename)
 			}
-			if err := f.SetCellValue("Sheet1", "C"+row, t.TicketData.Number); err != nil {
-				return domain.WrapErrorf(err, domain.ErrorCodeUnknown, "could not write data to Excel file '%s", filename)
+			if err := f.SetCellValue(sheet, "B"+row, t.TicketData.Number); err != nil {
+				return domain.WrapErrorf(err, domain.ErrorCodeUnknown, "could not write data to Excel file '%s'", filename)
 			}
-			if err := f.SetCellValue("Sheet1", "D"+row, t.TicketData.ShortDescription); err != nil {
-				return domain.WrapErrorf(err, domain.ErrorCodeUnknown, "could not write data to Excel file '%s", filename)
+			if err := f.SetCellValue(sheet, "C"+row, t.TicketData.ShortDescription); err != nil {
+				return domain.WrapErrorf(err, domain.ErrorCodeUnknown, "could not write data to Excel file '%s'", filename)
+			}
+			if err := f.SetCellValue(sheet, "D"+row, t.TicketData.Location); err != nil {
+				return domain.WrapErrorf(err, domain.ErrorCodeUnknown, "could not write data to Excel file '%s'", filename)
 			}
 		}
 

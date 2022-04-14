@@ -16,4 +16,5 @@ type Data struct {
 	Number           string
 	ShortDescription string
 	StateID          int
+	Location         string
 }

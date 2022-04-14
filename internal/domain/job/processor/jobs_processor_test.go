@@ -167,6 +167,8 @@ func Test_processor_DataProcessing(t *testing.T) {
 		TicketData: ticket.Data{
 			Number:           "INC1111",
 			ShortDescription: "Incident 1111",
+			StateID:          0,
+			Location:         "Cz Praha 10 Czechia  Jerevanská, 1158",
 		},
 	}
 	inc2 := ticket.Ticket{
@@ -176,6 +178,8 @@ func Test_processor_DataProcessing(t *testing.T) {
 		TicketData: ticket.Data{
 			Number:           "INC2222",
 			ShortDescription: "Incident 2222",
+			StateID:          2,
+			Location:         "Bel Bürglen Switzerland  Chaussée de Liège",
 		},
 	}
 	inc3 := ticket.Ticket{
@@ -185,6 +189,8 @@ func Test_processor_DataProcessing(t *testing.T) {
 		TicketData: ticket.Data{
 			Number:           "INC3333",
 			ShortDescription: "Incident 3333",
+			StateID:          3,
+			Location:         "Nid Nuland Netherlands  Nulandsestraat, 2",
 		},
 	}
 	incidentListU1Ch1 := ticket.List{inc1, inc2, inc3}
@@ -196,6 +202,8 @@ func Test_processor_DataProcessing(t *testing.T) {
 		TicketData: ticket.Data{
 			Number:           "INC4444",
 			ShortDescription: "Incident 4444",
+			StateID:          0,
+			Location:         "Sp Teruel Spain  Poligono 25, 66",
 		},
 	}
 	incidentListU2Ch3 := ticket.List{inc4}
@@ -207,6 +215,8 @@ func Test_processor_DataProcessing(t *testing.T) {
 		TicketData: ticket.Data{
 			Number:           "REQ1111",
 			ShortDescription: "Request 1111",
+			StateID:          3,
+			Location:         "Au Schaldorf Austria  Neubaugasse, 13",
 		},
 	}
 	requestListU1Ch1 := ticket.List{req1}
@@ -218,6 +228,8 @@ func Test_processor_DataProcessing(t *testing.T) {
 		TicketData: ticket.Data{
 			Number:           "REQ2222",
 			ShortDescription: "Request 2222",
+			StateID:          2,
+			Location:         "Cor Corbie France  Route de Bray",
 		},
 	}
 	requestListU2Ch1 := ticket.List{req2}
@@ -288,6 +300,7 @@ func Test_processor_DataProcessing(t *testing.T) {
 		assert.Equal(t, tckt.UserEmail, email2)
 	}
 
+	// check generated Excel files
 	files, err := os.ReadDir(excelGen.DirName())
 	require.NoError(t, err)
 
