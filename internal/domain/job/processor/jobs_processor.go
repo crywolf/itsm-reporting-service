@@ -8,6 +8,7 @@ import (
 
 	"github.com/KompiTech/itsm-reporting-service/internal/domain"
 	chandownloader "github.com/KompiTech/itsm-reporting-service/internal/domain/channel/downloader"
+	"github.com/KompiTech/itsm-reporting-service/internal/domain/email"
 	"github.com/KompiTech/itsm-reporting-service/internal/domain/excel"
 	"github.com/KompiTech/itsm-reporting-service/internal/domain/ref"
 	ticketdownloader "github.com/KompiTech/itsm-reporting-service/internal/domain/ticket/downloader"
@@ -33,6 +34,7 @@ func NewJobProcessor(
 	userDownloader userdownloader.UserDownloader,
 	ticketDownloader ticketdownloader.TicketDownloader,
 	excelGenerator excel.Generator,
+	emailSender email.Sender,
 ) JobProcessor {
 	return &processor{
 		logger:            logger,
@@ -41,6 +43,7 @@ func NewJobProcessor(
 		userDownloader:    userDownloader,
 		ticketDownloader:  ticketDownloader,
 		excelGenerator:    excelGenerator,
+		emailSender:       emailSender,
 		jobQueue:          make(chan struct{}, 1),
 	}
 }
@@ -52,6 +55,7 @@ type processor struct {
 	userDownloader    userdownloader.UserDownloader
 	ticketDownloader  ticketdownloader.TicketDownloader
 	excelGenerator    excel.Generator
+	emailSender       email.Sender
 	jobQueue          chan struct{}
 	mu                sync.Mutex
 	ready             bool
@@ -120,7 +124,12 @@ func (p *processor) WaitForJobs() {
 				continue
 			}
 
-			// TODO Send emails
+			if err := p.sendEmails(ctx, j.UUID()); err != nil {
+				p.logger.Errorw("Emails sending failed", "error", err)
+				p.markJobAsFailed(ctx, j.UUID(), err)
+				p.markAsReady()
+				continue
+			}
 
 			p.markJobAsFinished(ctx, j.UUID())
 			p.markAsReady()
@@ -259,6 +268,34 @@ func (p *processor) generateExcelFiles(ctx context.Context, jobID ref.UUID) erro
 	return nil
 }
 
+func (p *processor) sendEmails(ctx context.Context, jobID ref.UUID) error {
+	p.logger.Infow("Starting emails sending", "time", time.Now().Format(time.RFC3339), "job", jobID)
+
+	j, err := p.jobRepository.GetJob(ctx, jobID)
+	if err != nil {
+		p.logger.Errorw("Could not get job for emails sending update", "error", err)
+	}
+
+	j.EmailsSendingStartedAt.SetNow()
+
+	if _, err := p.jobRepository.UpdateJob(ctx, j); err != nil {
+		p.logger.Errorw("Could not mark job as email sending started", "error", err)
+	}
+
+	if err := p.emailSender.SendEmails(ctx); err != nil {
+		return err
+	}
+
+	j.EmailsSendingFinishedAt.SetNow()
+
+	if _, err := p.jobRepository.UpdateJob(ctx, j); err != nil {
+		p.logger.Errorw("Could not mark job as emails sending finished", "error", err)
+	}
+
+	p.logger.Infow("Emails were sent successfully", "time", time.Now().Format(time.RFC3339), "job", jobID)
+	return nil
+}
+
 func (p *processor) markAsReady() {
 	p.mu.Lock()
 	p.ready = true
@@ -289,4 +326,6 @@ func (p *processor) markJobAsFinished(ctx context.Context, jobID ref.UUID) {
 	if _, err := p.jobRepository.UpdateJob(ctx, j); err != nil {
 		p.logger.Errorw("Could not mark job as finished", "error", err)
 	}
+
+	p.logger.Infow("Job finished", "time", time.Now().Format(time.RFC3339), "id", j.UUID())
 }

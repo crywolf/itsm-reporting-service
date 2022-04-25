@@ -39,9 +39,6 @@ func (d *userDownloader) DownloadUsers(ctx context.Context) error {
 	}
 
 	for _, channel := range channels {
-		// TODO - remove
-		//fmt.Println("DownloadUsers - channel:", channel)
-
 		userList, err := d.client.GetEngineers(ctx, channel)
 		if err != nil {
 			return err

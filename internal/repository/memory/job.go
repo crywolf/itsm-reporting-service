@@ -26,5 +26,9 @@ type Job struct {
 
 	ExcelFilesGenerationFinishedAt string
 
+	EmailsSendingStartedAt string
+
+	EmailsSendingFinishedAt string
+
 	FinalStatus string
 }

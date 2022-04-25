@@ -51,6 +51,14 @@ type Job struct {
 	// swagger:strfmt date-time
 	ExcelFilesGenerationFinishedAt string `json:"excel_files_generation_finished_at,omitempty"`
 
+	// Time when sending of emails started
+	// swagger:strfmt date-time
+	EmailsSendingStartedAt string `json:"emails_sending_started_at,omitempty"`
+
+	// Time when sending of emails finished
+	// swagger:strfmt date-time
+	EmailsSendingFinishedAt string `json:"emails_sending_finished_at,omitempty"`
+
 	// Status of the finished job (success/error)
 	FinalStatus string `json:"final_status,omitempty"`
 }

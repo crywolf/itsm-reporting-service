@@ -49,6 +49,8 @@ func (p jobPresenter) convertJobToAPI(j job.Job) api.Job {
 		TicketsDownloadFinishedAt:      j.TicketsDownloadFinishedAt.String(),
 		ExcelFilesGenerationStartedAt:  j.ExcelFilesGenerationStartedAt.String(),
 		ExcelFilesGenerationFinishedAt: j.ExcelFilesGenerationFinishedAt.String(),
+		EmailsSendingStartedAt:         j.EmailsSendingStartedAt.String(),
+		EmailsSendingFinishedAt:        j.EmailsSendingFinishedAt.String(),
 		FinalStatus:                    j.FinalStatus,
 	}
 

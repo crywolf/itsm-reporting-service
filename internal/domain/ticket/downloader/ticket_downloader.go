@@ -2,10 +2,10 @@ package ticketdownloader
 
 import (
 	"context"
-	"fmt"
 
 	"github.com/KompiTech/itsm-reporting-service/internal/domain/ticket"
 	"github.com/KompiTech/itsm-reporting-service/internal/repository"
+	"go.uber.org/zap"
 )
 
 // TicketDownloader downloads list of users from the ITSM service
@@ -20,8 +20,15 @@ type TicketDownloader interface {
 	Close() error
 }
 
-func NewTicketDownloader(channelRepository repository.ChannelRepository, userRepository repository.UserRepository, ticketRepository repository.TicketRepository, client TicketClient) TicketDownloader {
+func NewTicketDownloader(
+	logger *zap.SugaredLogger,
+	channelRepository repository.ChannelRepository,
+	userRepository repository.UserRepository,
+	ticketRepository repository.TicketRepository,
+	client TicketClient,
+) TicketDownloader {
 	return &ticketDownloader{
+		logger:            logger,
 		client:            client,
 		channelRepository: channelRepository,
 		userRepository:    userRepository,
@@ -30,6 +37,7 @@ func NewTicketDownloader(channelRepository repository.ChannelRepository, userRep
 }
 
 type ticketDownloader struct {
+	logger            *zap.SugaredLogger
 	client            TicketClient
 	channelRepository repository.ChannelRepository
 	userRepository    repository.UserRepository
@@ -48,8 +56,7 @@ func (d *ticketDownloader) DownloadTickets(ctx context.Context) error {
 			return err
 		}
 
-		// TODO - remove
-		//fmt.Println("\n>>> len(userList):", len(userList))
+		d.logger.Infow("Downloading tickets from the channel", "channel", channel.Name, "users found", len(userList))
 
 		var ticketList ticket.List
 
@@ -58,9 +65,6 @@ func (d *ticketDownloader) DownloadTickets(ctx context.Context) error {
 			if err != nil {
 				return err
 			}
-
-			// TODO - delete
-			//fmt.Println("---> returned INCIDENTS for user:", user.Email, user.Name, len(ticketList))
 
 			if err := d.ticketRepository.AddTicketList(ctx, ticketList); err != nil {
 				return err
@@ -71,15 +75,12 @@ func (d *ticketDownloader) DownloadTickets(ctx context.Context) error {
 				return err
 			}
 
-			// TODO - delete
-			//fmt.Println("---> returned REQUESTS for user:", user.Email, user.Name, len(ticketList))
-
 			if err := d.ticketRepository.AddTicketList(ctx, ticketList); err != nil {
 				return err
 			}
 		}
 
-		fmt.Printf("===> Tickets from the channel %s downloaded\n", channel.Name)
+		d.logger.Infof("Tickets from the '%s' channel succesfully downloaded", channel.Name)
 	}
 
 	return nil

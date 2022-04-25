@@ -10,6 +10,7 @@ import (
 
 	chandownloader "github.com/KompiTech/itsm-reporting-service/internal/domain/channel/downloader"
 	"github.com/KompiTech/itsm-reporting-service/internal/domain/client"
+	"github.com/KompiTech/itsm-reporting-service/internal/domain/email"
 	"github.com/KompiTech/itsm-reporting-service/internal/domain/excel"
 	"github.com/KompiTech/itsm-reporting-service/internal/domain/job/processor"
 	jobsvc "github.com/KompiTech/itsm-reporting-service/internal/domain/job/service"
@@ -61,11 +62,29 @@ func main() {
 		client.NewHTTPClient(viper.GetString("IncidentEndpointURI"), logger, tokenSvcClient),
 		client.NewHTTPClient(viper.GetString("RequestEndpointURI"), logger, tokenSvcClient),
 	)
-	ticketDownloader := ticketdownloader.NewTicketDownloader(channelRepository, userRepository, ticketRepository, ticketClient)
+	ticketDownloader := ticketdownloader.NewTicketDownloader(logger, channelRepository, userRepository, ticketRepository, ticketClient)
 
-	excelGen := excel.NewExcelGenerator(ticketRepository)
+	excelGen := excel.NewExcelGenerator(logger, ticketRepository)
 
-	jobProcessor := jobprocessor.NewJobProcessor(logger, jobRepository, channelDownloader, userDownloader, ticketDownloader, excelGen)
+	emailSender := email.NewEmailSender(
+		logger,
+		viper.GetString("PostmarkServerURL"),
+		viper.GetString("PostmarkServerToken"),
+		viper.GetString("PostmarkMessageStream"),
+		viper.GetString("FromEmailAddress"),
+		excelGen.DirName(),
+		ticketRepository,
+	)
+
+	jobProcessor := jobprocessor.NewJobProcessor(
+		logger,
+		jobRepository,
+		channelDownloader,
+		userDownloader,
+		ticketDownloader,
+		excelGen,
+		emailSender,
+	)
 
 	// HTTP server
 	server := rest.NewServer(rest.Config{

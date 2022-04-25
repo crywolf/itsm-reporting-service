@@ -2,7 +2,6 @@ package excel
 
 import (
 	"context"
-	"fmt"
 	"os"
 	"path/filepath"
 	"strconv"
@@ -10,24 +9,27 @@ import (
 	"github.com/KompiTech/itsm-reporting-service/internal/domain"
 	"github.com/KompiTech/itsm-reporting-service/internal/repository"
 	"github.com/xuri/excelize/v2"
+	"go.uber.org/zap"
 )
 
 type Generator interface {
-	// GenerateExcelFiles creates Excel spreadsheet files with tickets info
+	// GenerateExcelFiles creates Excel spreadsheet files with tickets' info
 	GenerateExcelFiles(ctx context.Context) error
 
 	// DirName returns name of the directory where the files are generated to
 	DirName() string
 }
 
-func NewExcelGenerator(ticketRepository repository.TicketRepository) Generator {
+func NewExcelGenerator(logger *zap.SugaredLogger, ticketRepository repository.TicketRepository) Generator {
 	return &excelGen{
+		logger:           logger,
 		ticketRepository: ticketRepository,
-		dirName:          filepath.Join(os.TempDir(), "xls-files"),
+		dirName:          filepath.Join(os.TempDir(), "reporting-xls-files"),
 	}
 }
 
 type excelGen struct {
+	logger           *zap.SugaredLogger
 	ticketRepository repository.TicketRepository
 	dirName          string // directory to put generated files to
 }
@@ -41,9 +43,6 @@ func (g excelGen) GenerateExcelFiles(ctx context.Context) error {
 	if err != nil {
 		return err
 	}
-
-	// TODO remove all fmt.Prints
-	fmt.Println("\n===> GenerateExcelFiles - emails", emails)
 
 	if err = os.RemoveAll(g.dirName); err != nil {
 		return domain.WrapErrorf(err, domain.ErrorCodeUnknown, "could not remove directory '%s'", g.dirName)
@@ -64,9 +63,6 @@ func (g excelGen) GenerateExcelFiles(ctx context.Context) error {
 			return domain.WrapErrorf(err, domain.ErrorCodeUnknown, "could not get tickets for email '%s' from repository", email)
 		}
 
-		fmt.Println("\n\n===> GenerateExcelFiles - email, len(tickets)", email, len(userTickets))
-		fmt.Println("\n===> GenerateExcelFiles - tickets", userTickets)
-
 		filename := email + ".xlsx"
 
 		f := excelize.NewFile()
@@ -81,7 +77,7 @@ func (g excelGen) GenerateExcelFiles(ctx context.Context) error {
 		}
 
 		// Excel file header
-		if err := f.SetCellValue(sheet, "A1", "Tickets for "+email); err != nil {
+		if err := f.SetCellValue(sheet, "A1", "Open tickets assigned to "+email); err != nil {
 			return domain.WrapErrorf(err, domain.ErrorCodeUnknown, "could not write data to Excel file '%s'", filename)
 		}
 		if err := f.SetCellValue(sheet, "A3", "Ticket type"); err != nil {
@@ -133,7 +129,7 @@ func (g excelGen) GenerateExcelFiles(ctx context.Context) error {
 			return domain.WrapErrorf(err, domain.ErrorCodeUnknown, "could not save file '%s'", filename)
 		}
 
-		fmt.Println("====>", filename, "SAVED!!!")
+		g.logger.Infow("Excel file generated", "for", email, "open tickets", len(userTickets))
 	}
 
 	return nil

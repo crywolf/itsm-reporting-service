@@ -54,8 +54,6 @@ func (c ticketClient) GetIncidents(ctx context.Context, channel channel.Channel,
 			return ticketList, domain.WrapErrorf(err, domain.ErrorCodeUnknown, "could not decode incident service Ok response")
 		}
 
-		// TODO - delete
-		//fmt.Println(">> GetIncidents for", user.Name, len(ticketList), bookmark)
 		if len(ticketList) < 10 {
 			break
 		}
@@ -101,13 +99,10 @@ func (c *ticketClient) Close() error {
 }
 
 func (c ticketClient) preparePayload(user user.User, bookmark string) string {
-	// TODO
-
+	// Download only "open" tickets
 	// state_id: 4 = Resolved, 5 = Closed, 6 = Cancelled
-	//return `{"selector":{"$and":[{"state_id":{"$ne":4}},{"state_id":{"$ne":5}},{"state_id":{"$ne":6}}],"assigned_to":"` +
-	//	user.UserID + `"},"fields":["uuid","number","short_description","state_id","location","location_custom"],"bookmark":"` + bookmark + `"}`
-
-	return `{"selector":{"assigned_to":"` + user.UserID + `"},"fields":["uuid","number","short_description","state_id","location","location_custom"],"bookmark":"` + bookmark + `"}`
+	return `{"selector":{"$and":[{"state_id":{"$ne":4}},{"state_id":{"$ne":5}},{"state_id":{"$ne":6}}],"assigned_to":"` +
+		user.UserID + `"},"fields":["uuid","number","short_description","state_id","location","location_custom"],"bookmark":"` + bookmark + `"}`
 }
 
 func (c ticketClient) processResponse(resp *http.Response, user user.User, channel channel.Channel) (ticketList ticket.List, bookmark string, err error) {

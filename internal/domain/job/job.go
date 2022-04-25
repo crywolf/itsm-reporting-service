@@ -44,6 +44,12 @@ type Job struct {
 	// Time when Excel files generation finished
 	ExcelFilesGenerationFinishedAt types.DateTime
 
+	// Time when sending of emails started
+	EmailsSendingStartedAt types.DateTime
+
+	// Time when sending of emails finished
+	EmailsSendingFinishedAt types.DateTime
+
 	// Status of the finished job (success/error)
 	FinalStatus string
 }

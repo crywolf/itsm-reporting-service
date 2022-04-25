@@ -27,6 +27,19 @@ func loadEnvConfiguration() {
 	viper.SetDefault("AssertionTokenOrg", "")
 	_ = viper.BindEnv("AssertionTokenOrg", "ASSERTION_TOKEN_ORG")
 
+	// Postmark Server = email sending service
+	viper.SetDefault("PostmarkServerURL", "https://api.postmarkapp.com/email/batch")
+	_ = viper.BindEnv("PostmarkServerURL", "POSTMARK_SERVER_URL")
+
+	viper.SetDefault("PostmarkServerToken", "")
+	_ = viper.BindEnv("PostmarkServerToken", "POSTMARK_SERVER_TOKEN")
+
+	viper.SetDefault("PostmarkMessageStream", "notifications")
+	_ = viper.BindEnv("PostmarkMessageStream", "POSTMARK_MESSAGE_STREAM")
+
+	viper.SetDefault("FromEmailAddress", "no-reply@blits-platform.com")
+	_ = viper.BindEnv("FromEmailAddress", "FROM_EMAIL_ADDRESS")
+
 	// Channel endpoint returns info about existing channels
 	viper.SetDefault("ChannelEndpointURI", "http://localhost:8081/api/v1/sub-spaces-by-app?appName=itsm")
 	_ = viper.BindEnv("ChannelEndpointURI", "CHANNEL_ENDPOINT_URI")

@@ -65,6 +65,8 @@ func (r *jobRepositoryMemory) UpdateJob(_ context.Context, job job.Job) (ref.UUI
 		TicketsDownloadFinishedAt:      job.TicketsDownloadFinishedAt.String(),
 		ExcelFilesGenerationStartedAt:  job.ExcelFilesGenerationStartedAt.String(),
 		ExcelFilesGenerationFinishedAt: job.ExcelFilesGenerationFinishedAt.String(),
+		EmailsSendingStartedAt:         job.EmailsSendingStartedAt.String(),
+		EmailsSendingFinishedAt:        job.EmailsSendingFinishedAt.String(),
 		FinalStatus:                    job.FinalStatus,
 	}
 
@@ -147,6 +149,8 @@ func (r jobRepositoryMemory) convertStoredToDomainIncident(storedJob Job) (job.J
 	j.TicketsDownloadFinishedAt = types.DateTime(storedJob.TicketsDownloadFinishedAt)
 	j.ExcelFilesGenerationStartedAt = types.DateTime(storedJob.ExcelFilesGenerationStartedAt)
 	j.ExcelFilesGenerationFinishedAt = types.DateTime(storedJob.ExcelFilesGenerationFinishedAt)
+	j.EmailsSendingStartedAt = types.DateTime(storedJob.EmailsSendingStartedAt)
+	j.EmailsSendingFinishedAt = types.DateTime(storedJob.EmailsSendingFinishedAt)
 	j.FinalStatus = storedJob.FinalStatus
 
 	return j, nil

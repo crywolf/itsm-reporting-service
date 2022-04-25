@@ -35,9 +35,7 @@ func (c userClient) GetEngineers(ctx context.Context, channel channel.Channel) (
 	var bookmark string
 
 	for {
-		// TODO
 		payload := `{"selector":{"$or":[{"type": "engineer"},{"type": "engineer-manager"}]},"fields":["uuid","full_name","email","type"],"bookmark":"` + bookmark + `"}`
-		//payload := `{"selector":{},"fields":["uuid","full_name","email","type"],"bookmark":"` + bookmark + `"}`
 		body := strings.NewReader(payload)
 		resp, err := c.Query(ctx, channel.ChannelID, body)
 		if err != nil {
@@ -64,6 +62,10 @@ func (c userClient) GetEngineers(ctx context.Context, channel channel.Channel) (
 		bookmark = okPayload.Bookmark
 
 		for _, v := range okPayload.Result {
+			if v.Email == "" { // this is in case of some data inconsistency in ITSM, we need to skip invalid users
+				continue
+			}
+
 			userList = append(userList, user.User{
 				ChannelID: channel.ChannelID,
 				UserID:    v.ID,
@@ -73,8 +75,6 @@ func (c userClient) GetEngineers(ctx context.Context, channel channel.Channel) (
 			)
 		}
 
-		// TODO - remove
-		//	fmt.Println(">> GetEngineers for", payload, len(userList))
 		if len(okPayload.Result) < 10 {
 			break
 		}

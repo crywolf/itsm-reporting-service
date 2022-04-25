@@ -148,7 +148,6 @@ func (c *HTTPClient) Do(req *Request) (*http.Response, error) {
 
 		if doErr != nil {
 			c.logger.Warnf("HTTPClient request %s %s failed: %v", req.Method, req.URL, doErr)
-
 		} else {
 			c.logger.Infof("HTTPClient request %s %s proceeded", req.Method, req.URL)
 		}

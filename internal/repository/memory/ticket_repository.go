@@ -23,8 +23,8 @@ func (r *ticketRepositoryMemory) AddTicketList(_ context.Context, ticketList tic
 	r.mu.Lock()
 	defer r.mu.Unlock()
 
-	for _, u := range ticketList {
-		r.tickets = append(r.tickets, u)
+	for _, t := range ticketList {
+		r.tickets = append(r.tickets, t)
 	}
 
 	return nil

@@ -49,11 +49,14 @@ func Test_processor_ProcessNewJob(t *testing.T) {
 
 		ticketDownloader := new(mocks.TicketDownloaderMock)
 		ticketDownloader.On("DownloadTickets").Return(nil).Once()
-		ticketDownloader.Wg.Add(1)
 
 		excelGen := new(mocks.ExcelGeneratorMock)
 
-		jp := NewJobProcessor(logger, jobsRepo, channelDownloader, userDownloader, ticketDownloader, excelGen)
+		emailSender := new(mocks.EmailSenderMock)
+		emailSender.On("SendEmails").Return(nil).Once()
+		emailSender.Wg.Add(1)
+
+		jp := NewJobProcessor(logger, jobsRepo, channelDownloader, userDownloader, ticketDownloader, excelGen, emailSender)
 		jp.WaitForJobs()
 
 		err = jp.ProcessNewJob(lastJob.UUID())
@@ -65,21 +68,23 @@ func Test_processor_ProcessNewJob(t *testing.T) {
 		assert.ErrorAs(t, err, &domainErr)
 		assert.EqualError(t, err, "job is being processed, try it later")
 
-		ticketDownloader.Wg.Wait() // wait for job processor to finish
+		emailSender.Wg.Wait() // wait for job processor to finish
 
 		jobsRepo.AssertExpectations(t)
 		channelDownloader.AssertExpectations(t)
 		userDownloader.AssertExpectations(t)
 		ticketDownloader.AssertExpectations(t)
+		emailSender.AssertExpectations(t)
 	})
 
 	t.Run("when the processor is ready", func(t *testing.T) {
 		jobsRepo := new(mocks.JobRepositoryMock)
 		jobsRepo.On("GetLastJob").Return(lastJob, nil).Once()
 		jobsRepo.On("GetLastJob").Return(lastJob2, nil).Once()
-		jobsRepo.On("GetJob", lastJob.UUID()).Return(lastJob, nil).Times(5)
+		jobsRepo.On("GetJob", lastJob.UUID()).Return(lastJob, nil).Times(6)
 		jobsRepo.On("GetJob", lastJob2.UUID()).Return(lastJob2, nil)
-		jobsRepo.On("UpdateJob", mock.AnythingOfType("job.Job")).Return(lastJob.UUID(), nil)
+		jobsRepo.On("UpdateJob", mock.AnythingOfType("job.Job")).Return(lastJob.UUID(), nil).Times(12)
+		jobsRepo.On("UpdateJob", mock.AnythingOfType("job.Job")).Return(lastJob2.UUID(), nil)
 
 		channelDownloader := new(mocks.ChannelDownloaderMock)
 		channelDownloader.On("DownloadChannelList").Return(nil).Twice()
@@ -89,26 +94,38 @@ func Test_processor_ProcessNewJob(t *testing.T) {
 
 		ticketDownloader := new(mocks.TicketDownloaderMock)
 		ticketDownloader.On("DownloadTickets").Return(nil).Twice()
-		ticketDownloader.Wg.Add(2)
 
 		excelGen := new(mocks.ExcelGeneratorMock)
 
-		jp := NewJobProcessor(logger, jobsRepo, channelDownloader, userDownloader, ticketDownloader, excelGen)
+		emailSender := new(mocks.EmailSenderMock)
+		emailSender.On("SendEmails").Return(nil).Twice()
+		emailSender.Wg.Add(2)
+
+		jp := NewJobProcessor(
+			logger,
+			jobsRepo,
+			channelDownloader,
+			userDownloader,
+			ticketDownloader,
+			excelGen,
+			emailSender,
+		)
 		jp.WaitForJobs()
 
 		err = jp.ProcessNewJob(lastJob.UUID())
 		assert.NoError(t, err, "unexpected error", err)
 
-		time.Sleep(100 * time.Millisecond) // wait for processor to get ready - TODO: do it better later?
+		time.Sleep(200 * time.Millisecond) // wait for processor to get ready - TODO: do it better later?
 		err = jp.ProcessNewJob(lastJob2.UUID())
 		assert.NoError(t, err, "unexpected error", err)
 
-		ticketDownloader.Wg.Wait() // wait for job processor to finish
+		emailSender.Wg.Wait() // wait for job processor to finish
 
 		jobsRepo.AssertExpectations(t)
 		channelDownloader.AssertExpectations(t)
 		userDownloader.AssertExpectations(t)
 		ticketDownloader.AssertExpectations(t)
+		emailSender.AssertExpectations(t)
 	})
 }
 
@@ -256,11 +273,23 @@ func Test_processor_DataProcessing(t *testing.T) {
 	userRepository := memory.NewUserRepositoryMemory()
 	userDownloader := userdownloader.NewUserDownloader(channelRepository, userRepository, userClient)
 	ticketRepository := memory.NewTicketRepositoryMemory()
-	ticketDownloader := ticketdownloader.NewTicketDownloader(channelRepository, userRepository, ticketRepository, ticketClient)
+	ticketDownloader := ticketdownloader.NewTicketDownloader(logger, channelRepository, userRepository, ticketRepository, ticketClient)
 
-	excelGen := excel.NewExcelGenerator(ticketRepository)
+	excelGen := excel.NewExcelGenerator(logger, ticketRepository)
 
-	jp := NewJobProcessor(logger, jobsRepo, channelDownloader, userDownloader, ticketDownloader, excelGen)
+	emailSender := new(mocks.EmailSenderMock)
+	emailSender.On("SendEmails").Return(nil)
+	emailSender.Wg.Add(1)
+
+	jp := NewJobProcessor(
+		logger,
+		jobsRepo,
+		channelDownloader,
+		userDownloader,
+		ticketDownloader,
+		excelGen,
+		emailSender,
+	)
 	jp.WaitForJobs()
 
 	err = jp.ProcessNewJob(lastJob.UUID())
@@ -268,8 +297,7 @@ func Test_processor_DataProcessing(t *testing.T) {
 
 	ticketClient.Wg.Wait() // wait for job processor to finish
 
-	// TODO - with finished email service mock wait for it to finish instead of this Sleep()
-	time.Sleep(500 * time.Millisecond)
+	emailSender.Wg.Wait() // wait for job processor to finish
 
 	ctx := context.Background()
 
@@ -278,8 +306,6 @@ func Test_processor_DataProcessing(t *testing.T) {
 
 	expectedUserListCh2, err := userRepository.GetUsersByChannel(ctx, ch2.ChannelID)
 	require.NoError(t, err)
-
-	//	fmt.Println(">>>>>>>>> TEST user list:", expectedUserListCh1, expectedUserListCh2)
 
 	assert.Len(t, expectedUserListCh1, len(userListChan1), "len of users in channel 1")
 	assert.Len(t, expectedUserListCh2, len(userListChan2), "len of users in channel 2")
@@ -307,8 +333,6 @@ func Test_processor_DataProcessing(t *testing.T) {
 	assert.Len(t, files, 2, "Excel files count == email addresses count")
 	assert.Equal(t, files[0].Name(), email1+".xlsx")
 	assert.Equal(t, files[1].Name(), email2+".xlsx")
-
-	//fmt.Println(">>>>>>>>> TEST ticket list:", expectedTicketListU1, expectedTicketListU2)
 
 	jobsRepo.AssertExpectations(t)
 	channelClient.AssertExpectations(t)
