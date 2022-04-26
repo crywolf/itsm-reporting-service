@@ -19,7 +19,6 @@ import (
 	userdownloader "github.com/KompiTech/itsm-reporting-service/internal/domain/user/downloader"
 	"github.com/KompiTech/itsm-reporting-service/internal/http/rest"
 	"github.com/KompiTech/itsm-reporting-service/internal/repository/memory"
-	"github.com/spf13/viper"
 	"go.uber.org/zap"
 )
 
@@ -41,26 +40,33 @@ func main() {
 
 	logger.Info("App starting...")
 
-	loadEnvConfiguration()
+	config, err := loadEnvConfig()
+	if err != nil {
+		logger.Fatalw("Error loading configuration", "error", err)
+	}
 
 	clock := realClock{}
 	jobRepository := memory.NewJobRepositoryMemory(clock)
 	jobService := jobsvc.NewJobService(jobRepository)
 
-	tokenSvcClient := client.NewTokenSvcClient()
+	tokenSvcClient := client.NewTokenSvcClient(client.Config{
+		AssertionToken:         config.AssertionToken,
+		AssertionTokenEndpoint: config.AssertionTokenEndpoint,
+		AssertionTokenOrg:      config.AssertionTokenOrg,
+	})
 
 	channelRepository := memory.NewChannelRepositoryMemory()
-	channelClient := chandownloader.NewChannelClient(client.NewHTTPClient(viper.GetString("ChannelEndpointURI"), logger, tokenSvcClient))
+	channelClient := chandownloader.NewChannelClient(client.NewHTTPClient(config.ChannelEndpointPath, logger, tokenSvcClient))
 	channelDownloader := chandownloader.NewChannelDownloader(channelRepository, channelClient)
 
 	userRepository := memory.NewUserRepositoryMemory()
-	userClient := userdownloader.NewUserClient(client.NewHTTPClient(viper.GetString("UserEndpointURI"), logger, tokenSvcClient))
+	userClient := userdownloader.NewUserClient(client.NewHTTPClient(config.UserEndpointPath, logger, tokenSvcClient))
 	userDownloader := userdownloader.NewUserDownloader(channelRepository, userRepository, userClient)
 
 	ticketRepository := memory.NewTicketRepositoryMemory()
 	ticketClient := ticketdownloader.NewTicketClient(
-		client.NewHTTPClient(viper.GetString("IncidentEndpointURI"), logger, tokenSvcClient),
-		client.NewHTTPClient(viper.GetString("RequestEndpointURI"), logger, tokenSvcClient),
+		client.NewHTTPClient(config.IncidentEndpointPath, logger, tokenSvcClient),
+		client.NewHTTPClient(config.RequestEndpointPath, logger, tokenSvcClient),
 	)
 	ticketDownloader := ticketdownloader.NewTicketDownloader(logger, channelRepository, userRepository, ticketRepository, ticketClient)
 
@@ -68,10 +74,10 @@ func main() {
 
 	emailSender := email.NewEmailSender(
 		logger,
-		viper.GetString("PostmarkServerURL"),
-		viper.GetString("PostmarkServerToken"),
-		viper.GetString("PostmarkMessageStream"),
-		viper.GetString("FromEmailAddress"),
+		config.PostmarkServerURL,
+		config.PostmarkServerToken,
+		config.PostmarkMessageStream,
+		config.FromEmailAddress,
 		excelGen.DirName(),
 		ticketRepository,
 	)
@@ -88,12 +94,12 @@ func main() {
 
 	// HTTP server
 	server := rest.NewServer(rest.Config{
-		Addr:                    viper.GetString("HTTPBindAddress"),
+		Addr:                    config.HTTPBindAddress,
 		URISchema:               "http://",
 		Logger:                  logger,
 		JobsService:             jobService,
 		JobsProcessor:           jobProcessor,
-		ExternalLocationAddress: viper.GetString("ExternalLocationAddress"),
+		ExternalLocationAddress: config.HTTPExternalLocationAddress,
 	})
 
 	srv := &http.Server{
@@ -112,8 +118,7 @@ func main() {
 		// We received a signal, shut down.
 
 		// Gracefully shutdown the server, waiting max 'timeout' seconds for current operations to complete
-		timeout := viper.GetInt("HTTPShutdownTimeoutInSeconds")
-		ctx, cancel := context.WithTimeout(context.Background(), time.Duration(timeout)*time.Second)
+		ctx, cancel := context.WithTimeout(context.Background(), time.Duration(config.HTTPShutdownTimeoutInSeconds)*time.Second)
 		defer cancel()
 
 		logger.Info("Shutting down HTTP server...")

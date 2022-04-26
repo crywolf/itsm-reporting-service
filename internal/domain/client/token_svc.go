@@ -5,7 +5,6 @@ import (
 	"time"
 
 	"github.com/KompiTech/iam-tools/pkg/tokget"
-	"github.com/spf13/viper"
 )
 
 type TokenSvcClient interface {
@@ -13,19 +12,32 @@ type TokenSvcClient interface {
 	GetToken() (string, error)
 }
 
-type tokenSvcClient struct{}
+type Config struct {
+	AssertionToken         string
+	AssertionTokenEndpoint string
+	AssertionTokenOrg      string
+}
 
-func NewTokenSvcClient() TokenSvcClient {
-	return &tokenSvcClient{}
+type tokenSvcClient struct {
+	config Config
+}
+
+func NewTokenSvcClient(config Config) TokenSvcClient {
+	return &tokenSvcClient{
+		config: config,
+	}
 }
 
 func (c *tokenSvcClient) GetToken() (string, error) {
-	assertionToken := viper.GetString("AssertionToken")
-	assertionTokenEndpoint := viper.GetString("AssertionTokenEndpoint")
-	assertionTokenOrg := viper.GetString("AssertionTokenOrg")
-
 	timeout := 5 * time.Second
-	refresher, err := tokget.NewRefresherFromReader(strings.NewReader(assertionToken), assertionTokenEndpoint, false, timeout, map[string]interface{}{"org": assertionTokenOrg}, 300)
+	refresher, err := tokget.NewRefresherFromReader(
+		strings.NewReader(c.config.AssertionToken),
+		c.config.AssertionTokenEndpoint,
+		false,
+		timeout,
+		map[string]interface{}{"org": c.config.AssertionTokenOrg},
+		300,
+	)
 	if err != nil {
 		return "", err
 	}

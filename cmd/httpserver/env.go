@@ -1,58 +1,129 @@
 package main
 
-import "github.com/spf13/viper"
+import (
+	"fmt"
+	"os"
+	"strconv"
+)
 
-// loadEnvConfiguration loads environment variables
-func loadEnvConfiguration() {
-	// HTTP server
-	viper.SetDefault("HTTPBindAddress", "localhost:8080")
-	_ = viper.BindEnv("HTTPBindAddress", "HTTP_BIND_ADDRESS")
-
-	viper.SetDefault("HTTPBindPort", "8080")
-	_ = viper.BindEnv("HTTPBindPort", "HTTP_BIND_PORT")
-
-	viper.SetDefault("ExternalLocationAddress", "http://localhost:8080")
-	_ = viper.BindEnv("ExternalLocationAddress", "EXTERNAL_LOCATION_ADDRESS")
-
-	viper.SetDefault("HTTPShutdownTimeoutInSeconds", "30")
-	_ = viper.BindEnv("HTTPShutdownTimeoutInSeconds", "HTTP_SHUTDOWN_TIMEOUT_SECONDS")
+// Config contains all the configuration variables
+type Config struct {
+	// HTTP server config
+	HTTPBindAddress              string
+	HTTPBindPort                 string
+	HTTPExternalLocationAddress  string
+	HTTPShutdownTimeoutInSeconds int
 
 	// Assertion token - to get the auth token for calls to external services
-	viper.SetDefault("AssertionToken", "")
-	_ = viper.BindEnv("AssertionToken", "ASSERTION_TOKEN")
+	AssertionToken         string
+	AssertionTokenEndpoint string
+	AssertionTokenOrg      string
 
-	viper.SetDefault("AssertionTokenEndpoint", "")
-	_ = viper.BindEnv("AssertionTokenEndpoint", "ASSERTION_TOKEN_ENDPOINT")
+	// Postmark Server config
+	PostmarkServerURL     string
+	PostmarkServerToken   string
+	PostmarkMessageStream string
+	FromEmailAddress      string
 
-	viper.SetDefault("AssertionTokenOrg", "")
-	_ = viper.BindEnv("AssertionTokenOrg", "ASSERTION_TOKEN_ORG")
-
-	// Postmark Server = email sending service
-	viper.SetDefault("PostmarkServerURL", "https://api.postmarkapp.com/email/batch")
-	_ = viper.BindEnv("PostmarkServerURL", "POSTMARK_SERVER_URL")
-
-	viper.SetDefault("PostmarkServerToken", "")
-	_ = viper.BindEnv("PostmarkServerToken", "POSTMARK_SERVER_TOKEN")
-
-	viper.SetDefault("PostmarkMessageStream", "notifications")
-	_ = viper.BindEnv("PostmarkMessageStream", "POSTMARK_MESSAGE_STREAM")
-
-	viper.SetDefault("FromEmailAddress", "no-reply@blits-platform.com")
-	_ = viper.BindEnv("FromEmailAddress", "FROM_EMAIL_ADDRESS")
+	// ITSM server address, for example "http://localhost:8081"
+	ITSMServerURI string
 
 	// Channel endpoint returns info about existing channels
-	viper.SetDefault("ChannelEndpointURI", "http://localhost:8081/api/v1/sub-spaces-by-app?appName=itsm")
-	_ = viper.BindEnv("ChannelEndpointURI", "CHANNEL_ENDPOINT_URI")
+	ChannelEndpointPath string
 
 	// User endpoint returns info about existing users
-	viper.SetDefault("UserEndpointURI", "http://localhost:8081/api/v1/assets/user")
-	_ = viper.BindEnv("UserEndpointURI", "USER_ENDPOINT_URI")
+	UserEndpointPath string
 
 	// Incident endpoint returns info about existing incidents
-	viper.SetDefault("IncidentEndpointURI", "http://localhost:8081/api/v1/assets/incident?resolve=true")
-	_ = viper.BindEnv("IncidentEndpointURI", "INCIDENT_ENDPOINT_URI")
+	IncidentEndpointPath string
+
+	// Requests endpoint returns info about existing requests
+	RequestEndpointPath string
+}
+
+// loadEnvConfig creates Config object initialized from environment variables
+func loadEnvConfig() (*Config, error) {
+	c := &Config{}
+
+	var ok bool
+
+	// HTTP server
+	if c.HTTPBindAddress, ok = os.LookupEnv("HTTP_BIND_ADDRESS"); !ok {
+		c.HTTPBindAddress = "localhost:8080" // default value
+	}
+
+	if c.HTTPBindPort, ok = os.LookupEnv("HTTP_BIND_PORT"); !ok {
+		c.HTTPBindPort = "8080" // default value
+	}
+
+	if c.HTTPExternalLocationAddress, ok = os.LookupEnv("EXTERNAL_LOCATION_ADDRESS"); !ok {
+		c.HTTPExternalLocationAddress = "http://localhost:" + c.HTTPBindPort // default value
+	}
+
+	c.HTTPShutdownTimeoutInSeconds = 30 // default value
+	if shTimeStr, ok := os.LookupEnv("HTTP_SHUTDOWN_TIMEOUT_SECONDS"); ok {
+		shTime, err := strconv.ParseInt(shTimeStr, 10, 64)
+		if err != nil {
+			return c, fmt.Errorf("could not parse env var %s as int", "HTTP_SHUTDOWN_TIMEOUT_SECONDS")
+		}
+
+		c.HTTPShutdownTimeoutInSeconds = int(shTime)
+	}
+
+	// Assertion token - to get the auth token for calls to external services
+	if c.AssertionToken, ok = os.LookupEnv("ASSERTION_TOKEN"); !ok {
+		return c, fmt.Errorf("env var %s not set", "ASSERTION_TOKEN")
+	}
+
+	if c.AssertionTokenEndpoint, ok = os.LookupEnv("ASSERTION_TOKEN_ENDPOINT"); !ok {
+		return c, fmt.Errorf("env var %s not set", "ASSERTION_TOKEN_ENDPOINT")
+	}
+
+	if c.AssertionTokenOrg, ok = os.LookupEnv("ASSERTION_TOKEN_ORG"); !ok {
+		return c, fmt.Errorf("env var %s not set", "ASSERTION_TOKEN_ORG")
+	}
+
+	// Postmark Server = email sending service
+	if c.PostmarkServerURL, ok = os.LookupEnv("POSTMARK_SERVER_URL"); !ok {
+		c.PostmarkServerURL = "https://api.postmarkapp.com/email/batch" // default value
+	}
+
+	if c.PostmarkServerToken, ok = os.LookupEnv("POSTMARK_SERVER_TOKEN"); !ok {
+		return c, fmt.Errorf("env var %s not set", "POSTMARK_SERVER_TOKEN")
+	}
+
+	if c.PostmarkMessageStream, ok = os.LookupEnv("POSTMARK_MESSAGE_STREAM"); !ok {
+		c.PostmarkMessageStream = "notifications" // default value
+	}
+
+	if c.FromEmailAddress, ok = os.LookupEnv("FROM_EMAIL_ADDRESS"); !ok {
+		c.FromEmailAddress = "no-reply@blits-platform.com" // default value
+	}
+
+	// ITSM server address, for example "http://localhost:8081"
+	if c.ITSMServerURI, ok = os.LookupEnv("ITSM_SERVER_URI"); !ok {
+		return c, fmt.Errorf("env var %s not set", "ITSM_SERVER_URI")
+	}
+
+	// Channel endpoint returns info about existing channels
+	if c.ChannelEndpointPath, ok = os.LookupEnv("CHANNEL_ENDPOINT_PATH"); !ok {
+		c.ChannelEndpointPath = c.ITSMServerURI + "/api/v1/sub-spaces-by-app?appName=itsm" // default value
+	}
+
+	// User endpoint returns info about existing users
+	if c.UserEndpointPath, ok = os.LookupEnv("USER_ENDPOINT_PATH"); !ok {
+		c.UserEndpointPath = c.ITSMServerURI + "/api/v1/assets/user" // default value
+	}
+
+	// Incident endpoint returns info about existing incidents
+	if c.IncidentEndpointPath, ok = os.LookupEnv("INCIDENT_ENDPOINT_PATH"); !ok {
+		c.IncidentEndpointPath = c.ITSMServerURI + "/api/v1/assets/incident?resolve=true" // default value
+	}
 
 	// Requests endpoint returns info about existing requests (i.e. k_requests)
-	viper.SetDefault("RequestEndpointURI", "http://localhost:8081/api/v1/assets/k_request?resolve=true")
-	_ = viper.BindEnv("RequestEndpointURI", "REQUEST_ENDPOINT_URI")
+	if c.RequestEndpointPath, ok = os.LookupEnv("REQUEST_ENDPOINT_PATH"); !ok {
+		c.RequestEndpointPath = c.ITSMServerURI + "/api/v1/assets/k_request?resolve=true" // default value
+	}
+
+	return c, nil
 }
