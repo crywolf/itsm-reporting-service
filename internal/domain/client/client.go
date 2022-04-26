@@ -94,7 +94,7 @@ func (c *HTTPClient) Close() error {
 func (c HTTPClient) doRequest(channelID string, req *Request) (*http.Response, error) {
 	authToken, err := c.tokenSvcClient.GetToken()
 	if err != nil {
-		return nil, domain.WrapErrorf(err, domain.ErrorCodeUnknown, "could not get token")
+		return nil, domain.WrapErrorf(err, domain.ErrorCodeUnknown, "could not get auth token")
 	}
 
 	req.Header.Set("authorization", authToken)
