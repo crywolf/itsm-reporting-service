@@ -23,9 +23,15 @@ func TestCreateJobHandler(t *testing.T) {
 
 	t.Run("when the job processor is busy", func(t *testing.T) {
 		jobID := ref.UUID("38316161-3035-4864-ad30-6231392d3433")
+		failingJob := job.Job{}
+
 		jobsSvc := new(mocks.JobServiceMock)
 		jobsSvc.On("CreateJob").
 			Return(jobID, nil)
+
+		jobsSvc.On("GetJob", jobID).Return(failingJob, nil)
+		failingJob.FinalStatus = "Error: job is being processed, try it later"
+		jobsSvc.On("UpdateJob", failingJob).Return(jobID, nil)
 
 		jobProcessor := new(mocks.JobProcessorMock)
 		jobProcessor.On("ProcessNewJob", jobID).Return(jobprocessor.ErrorBusy)

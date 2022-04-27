@@ -1,6 +1,7 @@
 package rest
 
 import (
+	"fmt"
 	"net/http"
 
 	"github.com/KompiTech/itsm-reporting-service/internal/domain/ref"
@@ -17,17 +18,31 @@ import (
 // CreateJob returns handler for creating new job
 func (s *Server) CreateJob() func(http.ResponseWriter, *http.Request, httprouter.Params) {
 	return func(w http.ResponseWriter, r *http.Request, _ httprouter.Params) {
-		newID, err := s.jobsService.CreateJob(r.Context())
+		ctx := r.Context()
+		newID, err := s.jobsService.CreateJob(ctx)
 		if err != nil {
 			s.logger.Errorw("CreateJob handler failed", "error", err)
 			s.jobsPresenter.RenderError(w, "", err)
 			return
 		}
 
-		if err = s.jobsProcessor.ProcessNewJob(newID); err != nil {
-			s.logger.Errorw("CreateJob handler failed", "error", err)
-			s.jobsPresenter.RenderError(w, "", err)
-			// TODO delete the unprocessed job (or mark it)
+		if jobErr := s.jobsProcessor.ProcessNewJob(newID); jobErr != nil {
+			s.logger.Errorw("CreateJob handler failed", "error", jobErr)
+
+			// mark the unprocessed job as failed
+			j, err := s.jobsService.GetJob(ctx, newID)
+			if err != nil {
+				s.logger.Errorw("CreateJob handler failed", "error", err)
+			}
+
+			j.FinalStatus = fmt.Sprintf("Error: %s", jobErr)
+
+			_, err = s.jobsService.UpdateJob(ctx, j)
+			if err != nil {
+				s.logger.Errorw("CreateJob handler failed", "error", err)
+			}
+
+			s.jobsPresenter.RenderError(w, "", jobErr)
 			return
 		}
 

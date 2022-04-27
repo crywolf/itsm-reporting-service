@@ -18,6 +18,11 @@ func (s *JobServiceMock) CreateJob(_ context.Context) (ref.UUID, error) {
 	return args.Get(0).(ref.UUID), args.Error(1)
 }
 
+func (s *JobServiceMock) UpdateJob(_ context.Context, j job.Job) (ref.UUID, error) {
+	args := s.Called(j)
+	return args.Get(0).(ref.UUID), args.Error(1)
+}
+
 func (s *JobServiceMock) GetJob(_ context.Context, ID ref.UUID) (job.Job, error) {
 	args := s.Called(ID)
 	return args.Get(0).(job.Job), args.Error(1)

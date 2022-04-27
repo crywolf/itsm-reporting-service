@@ -23,6 +23,10 @@ func (s jobService) CreateJob(ctx context.Context) (ref.UUID, error) {
 	return s.repo.AddJob(ctx, job.Job{})
 }
 
+func (s jobService) UpdateJob(ctx context.Context, j job.Job) (ref.UUID, error) {
+	return s.repo.UpdateJob(ctx, j)
+}
+
 func (s jobService) GetJob(ctx context.Context, ID ref.UUID) (job.Job, error) {
 	return s.repo.GetJob(ctx, ID)
 }
