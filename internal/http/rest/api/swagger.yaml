@@ -1,0 +1,190 @@
+basePath: /
+consumes:
+- application/json
+definitions:
+  Job:
+    description: Job API object
+    properties:
+      channels_download_finished_at:
+        description: Time when the channels download finished
+        format: date-time
+        type: string
+        x-go-name: ChannelsDownloadFinishedAt
+      channels_download_started_at:
+        description: Time when the channels download started
+        format: date-time
+        type: string
+        x-go-name: ChannelsDownloadStartedAt
+      channels_download_status:
+        description: Status of the channel list download (success/error)
+        type: string
+        x-go-name: ChannelsDownloadStatus
+      created_at:
+        description: Time when the job was created
+        format: date-time
+        type: string
+        x-go-name: CreatedAt
+      emails_sending_finished_at:
+        description: Time when sending of emails finished
+        format: date-time
+        type: string
+        x-go-name: EmailsSendingFinishedAt
+      emails_sending_started_at:
+        description: Time when sending of emails started
+        format: date-time
+        type: string
+        x-go-name: EmailsSendingStartedAt
+      excel_files_generation_finished_at:
+        description: Time when Excel files generation finished
+        format: date-time
+        type: string
+        x-go-name: ExcelFilesGenerationFinishedAt
+      excel_files_generation_started_at:
+        description: Time when Excel files generation started
+        format: date-time
+        type: string
+        x-go-name: ExcelFilesGenerationStartedAt
+      final_status:
+        description: Status of the finished job (success/error)
+        type: string
+        x-go-name: FinalStatus
+      processing_started_at:
+        description: Time when the job processing started
+        format: date-time
+        type: string
+        x-go-name: ProcessingStartedAt
+      tickets_download_finished_at:
+        description: Time when the tickets download finished
+        format: date-time
+        type: string
+        x-go-name: TicketsDownloadFinishedAt
+      tickets_download_started_at:
+        description: Time when the tickets download started
+        format: date-time
+        type: string
+        x-go-name: TicketsDownloadStartedAt
+      users_download_finished_at:
+        description: Time when the users download finished
+        format: date-time
+        type: string
+        x-go-name: UsersDownloadFinishedAt
+      users_download_started_at:
+        description: Time when the users download started
+        format: date-time
+        type: string
+        x-go-name: UsersDownloadStartedAt
+      uuid:
+        format: uuid
+        type: string
+        x-go-name: UUID
+    required:
+    - uuid
+    - created_at
+    type: object
+    x-go-package: github.com/KompiTech/itsm-reporting-service/internal/http/rest/api
+info:
+  description: Documentation for ITSM Reporting Service REST API
+  title: ITSM Reporting REST API
+  version: 0.0.1
+paths:
+  /jobs:
+    get:
+      description: Returns a list of jobs
+      operationId: ListJobs
+      responses:
+        "200":
+          $ref: '#/responses/jobListResponse'
+      tags:
+      - jobs
+    post:
+      description: Creates a new job
+      operationId: CreateJob
+      responses:
+        "201":
+          $ref: '#/responses/jobCreatedResponse'
+        "429":
+          $ref: '#/responses/errorResponse429'
+      tags:
+      - jobs
+  /jobs/{uuid}:
+    get:
+      description: Returns a single job from the repository
+      operationId: GetJob
+      responses:
+        "200":
+          $ref: '#/responses/jobResponse'
+        "404":
+          $ref: '#/responses/errorResponse404'
+      tags:
+      - jobs
+produces:
+- application/json
+responses:
+  error429Response:
+    description: Error Too Many Requests
+    headers:
+      Retry-After:
+        example: 'Retry-After: 600'
+        type: string
+    schema:
+      properties:
+        error:
+          type: string
+          x-go-name: ErrorMessage
+      required:
+      - error
+      type: object
+  errorResponse:
+    description: Error
+    schema:
+      properties:
+        error:
+          type: string
+          x-go-name: ErrorMessage
+      required:
+      - error
+      type: object
+  errorResponse404:
+    description: Not Found
+    schema:
+      properties:
+        error:
+          type: string
+          x-go-name: ErrorMessage
+      required:
+      - error
+      type: object
+  errorResponse429:
+    description: Too Many Requests
+    headers:
+      Retry-After:
+        example: 'Retry-After: 600'
+        type: string
+    schema:
+      properties:
+        error:
+          type: string
+          x-go-name: ErrorMessage
+      required:
+      - error
+      type: object
+  jobCreatedResponse:
+    description: Created
+    headers:
+      Location:
+        description: URI of the resource
+        example: http://localhost:8080/jobs/2af4f493-0bd5-4513-b440-6cbb465feadb
+        type: string
+  jobListResponse:
+    description: A list of jobs
+    schema:
+      items:
+        $ref: '#/definitions/Job'
+      type: array
+  jobResponse:
+    description: Data structure representing a single job
+    schema:
+      $ref: '#/definitions/Job'
+schemes:
+- http
+swagger: "2.0"

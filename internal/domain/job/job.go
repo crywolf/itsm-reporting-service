@@ -15,7 +15,7 @@ type Job struct {
 	CreatedAt types.DateTime
 
 	// Time when the job processing started
-	ProcessingStartedAt types.DateTime
+	ProcessingStartedAt types.DateTime // TODO remove - unnecessary
 
 	// Time when the channels download started
 	ChannelsDownloadStartedAt types.DateTime

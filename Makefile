@@ -1,3 +1,6 @@
+swagger = docker run --rm -e GOPATH=$$HOME/go:/go -v $$HOME:$$HOME -w $$(pwd) quay.io/goswagger/swagger:v0.29.0
+PORT ?= 3001 # HTTP port for local docs server
+
 COMMIT=$(shell git rev-parse HEAD)
 COMMIT_SHORT=$(shell git rev-parse --short HEAD)
 BRANDNAME?=itsm-reporting-service
@@ -21,6 +24,11 @@ test-all: test
 run:
 	go run ./cmd/httpserver
 
+docs:
+	go run ./cmd/docserver --port $(PORT)
+
+swagger:
+	$(swagger) generate spec -o ./internal/http/rest/api/swagger.yaml --scan-models
 
 build-linux:
 	env GO111MODULE=on GOOS=linux GOPROXY=${GOPROXY} GOARCH=amd64 CGO_ENABLED=${CGO} go build -o ${BUILD_DIR}/${PKG_NAME}.linux ${CMD_PATH}

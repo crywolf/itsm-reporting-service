@@ -8,6 +8,12 @@ import (
 	"github.com/julienschmidt/httprouter"
 )
 
+// swagger:route POST /jobs jobs CreateJob
+// Creates a new job
+// responses:
+//	201: jobCreatedResponse
+//	429: errorResponse429
+
 // CreateJob returns handler for creating new job
 func (s *Server) CreateJob() func(http.ResponseWriter, *http.Request, httprouter.Params) {
 	return func(w http.ResponseWriter, r *http.Request, _ httprouter.Params) {
@@ -31,6 +37,11 @@ func (s *Server) CreateJob() func(http.ResponseWriter, *http.Request, httprouter
 
 const listJobsRoute = "/jobs"
 
+// swagger:route GET /jobs jobs ListJobs
+// Returns a list of jobs
+// responses:
+//	200: jobListResponse
+
 // ListJobs returns handler for listing jobs
 func (s *Server) ListJobs() func(http.ResponseWriter, *http.Request, httprouter.Params) {
 	return func(w http.ResponseWriter, r *http.Request, _ httprouter.Params) {
@@ -45,6 +56,12 @@ func (s *Server) ListJobs() func(http.ResponseWriter, *http.Request, httprouter.
 	}
 }
 
+// swagger:route GET /jobs/{uuid} jobs GetJob
+// Returns a single job from the repository
+// responses:
+//	200: jobResponse
+//	404: errorResponse404
+
 // GetJob returns handler for getting single job
 func (s *Server) GetJob() func(http.ResponseWriter, *http.Request, httprouter.Params) {
 	return func(w http.ResponseWriter, r *http.Request, params httprouter.Params) {
@@ -58,7 +75,7 @@ func (s *Server) GetJob() func(http.ResponseWriter, *http.Request, httprouter.Pa
 
 		j, err := s.jobsService.GetJob(r.Context(), ref.UUID(id))
 		if err != nil {
-			s.logger.Errorw("GetIncident handler failed", "ID", id, "error", err)
+			s.logger.Errorw("GetJob handler failed", "ID", id, "error", err)
 			s.jobsPresenter.RenderError(w, "job not found", err)
 			return
 		}
