@@ -6,13 +6,9 @@ type Job struct {
 
 	CreatedAt string
 
-	ProcessingStartedAt string // TODO remove - unnecessary
-
 	ChannelsDownloadStartedAt string
 
 	ChannelsDownloadFinishedAt string
-
-	ChannelsDownloadStatus string // TODO remove - unnecessary
 
 	UsersDownloadStartedAt string
 

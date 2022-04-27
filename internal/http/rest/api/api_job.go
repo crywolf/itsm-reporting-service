@@ -27,13 +27,6 @@ type Job struct {
 	// swagger:strfmt date-time
 	CreatedAt string `json:"created_at,omitempty"`
 
-	// Time when the job processing started
-	// swagger:strfmt date-time
-	ProcessingStartedAt string `json:"processing_started_at,omitempty"` // TODO remove - unnecessary
-
-	// Status of the channel list download (success/error)
-	ChannelsDownloadStatus string `json:"channels_download_status,omitempty"` // TODO remove - unnecessary
-
 	// Time when the channels download started
 	// swagger:strfmt date-time
 	ChannelsDownloadStartedAt string `json:"channels_download_started_at,omitempty"`

@@ -25,8 +25,8 @@ func TestJobRepositoryMemory_AddingAndGettingJob(t *testing.T) {
 	require.NoError(t, err)
 
 	assert.Equal(t, jobID, retJob.UUID())
-	assert.Empty(t, retJob.ProcessingStartedAt)
-	assert.Empty(t, retJob.ChannelsDownloadStatus)
+	assert.Empty(t, retJob.ChannelsDownloadFinishedAt)
+	assert.Empty(t, retJob.FinalStatus)
 
 	assert.NotEmpty(t, retJob.CreatedAt)
 	assert.Equal(t, clock.NowFormatted(), retJob.CreatedAt)
@@ -46,7 +46,7 @@ func TestJobRepositoryMemory_UpdateJob(t *testing.T) {
 	retJob, err := repo.GetJob(ctx, jobID)
 	require.NoError(t, err)
 
-	retJob.ChannelsDownloadStatus = "success"
+	retJob.FinalStatus = "success"
 
 	// update job
 	retJobID, err := repo.UpdateJob(ctx, retJob)
@@ -59,7 +59,7 @@ func TestJobRepositoryMemory_UpdateJob(t *testing.T) {
 	require.NoError(t, err)
 
 	assert.Equal(t, jobID, updatedJob.UUID())
-	assert.Equal(t, "success", updatedJob.ChannelsDownloadStatus)
+	assert.Equal(t, "success", updatedJob.FinalStatus)
 	assert.Equal(t, retJob.CreatedAt, updatedJob.CreatedAt) // this should not be changed
 }
 

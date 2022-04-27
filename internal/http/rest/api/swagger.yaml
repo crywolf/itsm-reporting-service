@@ -15,10 +15,6 @@ definitions:
         format: date-time
         type: string
         x-go-name: ChannelsDownloadStartedAt
-      channels_download_status:
-        description: Status of the channel list download (success/error)
-        type: string
-        x-go-name: ChannelsDownloadStatus
       created_at:
         description: Time when the job was created
         format: date-time
@@ -48,11 +44,6 @@ definitions:
         description: Status of the finished job (success/error)
         type: string
         x-go-name: FinalStatus
-      processing_started_at:
-        description: Time when the job processing started
-        format: date-time
-        type: string
-        x-go-name: ProcessingStartedAt
       tickets_download_finished_at:
         description: Time when the tickets download finished
         format: date-time

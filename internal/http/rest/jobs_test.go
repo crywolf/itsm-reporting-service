@@ -92,9 +92,9 @@ func TestGetIncidentHandler(t *testing.T) {
 
 	uuid := "cb2fe2a7-ab9f-4f6d-9fd6-c7c209403cf0"
 	retJob := job.Job{
-		CreatedAt:              "2022-03-14T00:10:00+01:00",
-		ProcessingStartedAt:    "2022-03-14T00:12:00+01:00",
-		ChannelsDownloadStatus: "success",
+		CreatedAt:                  "2022-03-14T00:10:00+01:00",
+		ChannelsDownloadFinishedAt: "2022-03-14T00:12:00+01:00",
+		FinalStatus:                "success",
 	}
 	err := retJob.SetUUID(ref.UUID(uuid))
 	require.NoError(t, err)
@@ -129,9 +129,9 @@ func TestGetIncidentHandler(t *testing.T) {
 	assert.Equal(t, "application/json", resp.Header.Get("Content-Type"), "Content-Type header")
 
 	expectedJSON := `{
-		"channels_download_status":"success",
+		"final_status":"success",
 		"created_at":"2022-03-14T00:10:00+01:00",
-		"processing_started_at":"2022-03-14T00:12:00+01:00",
+		"channels_download_finished_at":"2022-03-14T00:12:00+01:00",
 		"uuid":"cb2fe2a7-ab9f-4f6d-9fd6-c7c209403cf0"
 	}`
 	assert.JSONEq(t, expectedJSON, string(b), "response does not match")

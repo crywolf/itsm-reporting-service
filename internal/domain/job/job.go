@@ -14,17 +14,11 @@ type Job struct {
 	// Time when the job was created
 	CreatedAt types.DateTime
 
-	// Time when the job processing started
-	ProcessingStartedAt types.DateTime // TODO remove - unnecessary
-
 	// Time when the channels download started
 	ChannelsDownloadStartedAt types.DateTime
 
 	// Time when the channels download finished
 	ChannelsDownloadFinishedAt types.DateTime
-
-	// Status of the channel list download (success/error)
-	ChannelsDownloadStatus string // TODO remove - unnecessary
 
 	// Time when the users download started
 	UsersDownloadStartedAt types.DateTime

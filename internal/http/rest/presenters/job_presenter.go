@@ -39,8 +39,6 @@ func (p jobPresenter) convertJobToAPI(j job.Job) api.Job {
 	apiJob := api.Job{
 		UUID:                           j.UUID().String(),
 		CreatedAt:                      j.CreatedAt.String(),
-		ProcessingStartedAt:            j.ProcessingStartedAt.String(),
-		ChannelsDownloadStatus:         j.ChannelsDownloadStatus,
 		ChannelsDownloadStartedAt:      j.ChannelsDownloadStartedAt.String(),
 		ChannelsDownloadFinishedAt:     j.ChannelsDownloadFinishedAt.String(),
 		UsersDownloadStartedAt:         j.UsersDownloadStartedAt.String(),

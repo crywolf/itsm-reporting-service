@@ -55,10 +55,8 @@ func (r *jobRepositoryMemory) UpdateJob(_ context.Context, job job.Job) (ref.UUI
 	storedJob := Job{
 		ID:                             job.UUID().String(),
 		CreatedAt:                      job.CreatedAt.String(),
-		ProcessingStartedAt:            job.ProcessingStartedAt.String(),
 		ChannelsDownloadStartedAt:      job.ChannelsDownloadStartedAt.String(),
 		ChannelsDownloadFinishedAt:     job.ChannelsDownloadFinishedAt.String(),
-		ChannelsDownloadStatus:         job.ChannelsDownloadStatus,
 		UsersDownloadStartedAt:         job.UsersDownloadStartedAt.String(),
 		UsersDownloadFinishedAt:        job.UsersDownloadFinishedAt.String(),
 		TicketsDownloadStartedAt:       job.TicketsDownloadStartedAt.String(),
@@ -139,8 +137,6 @@ func (r jobRepositoryMemory) convertStoredToDomainIncident(storedJob Job) (job.J
 	}
 
 	j.CreatedAt = types.DateTime(storedJob.CreatedAt)
-	j.ProcessingStartedAt = types.DateTime(storedJob.ProcessingStartedAt)
-	j.ChannelsDownloadStatus = storedJob.ChannelsDownloadStatus
 	j.ChannelsDownloadStartedAt = types.DateTime(storedJob.ChannelsDownloadStartedAt)
 	j.ChannelsDownloadFinishedAt = types.DateTime(storedJob.ChannelsDownloadFinishedAt)
 	j.UsersDownloadStartedAt = types.DateTime(storedJob.UsersDownloadStartedAt)
