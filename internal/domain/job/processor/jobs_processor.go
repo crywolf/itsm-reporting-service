@@ -14,6 +14,7 @@ import (
 	ticketdownloader "github.com/KompiTech/itsm-reporting-service/internal/domain/ticket/downloader"
 	userdownloader "github.com/KompiTech/itsm-reporting-service/internal/domain/user/downloader"
 	"github.com/KompiTech/itsm-reporting-service/internal/repository"
+	"github.com/prometheus/client_golang/prometheus"
 	"go.uber.org/zap"
 )
 
@@ -36,6 +37,24 @@ func NewJobProcessor(
 	excelGenerator excel.Generator,
 	emailSender email.Sender,
 ) JobProcessor {
+
+	// Register Prometheus counter
+	failureCounter := prometheus.NewCounter(prometheus.CounterOpts{
+		Name: "reporting_service_processing_failed",
+		Help: "The total number of job processor failures",
+	})
+
+	if err := prometheus.Register(failureCounter); err != nil {
+		if are, ok := err.(prometheus.AlreadyRegisteredError); ok {
+			// A counter for that metric has been registered before.
+			// Use the old counter from now on.
+			failureCounter = are.ExistingCollector.(prometheus.Counter)
+		} else {
+			// Something else went wrong!
+			logger.Fatalw("Prometheus counter registration failed", "error", err)
+		}
+	}
+
 	return &processor{
 		logger:            logger,
 		jobRepository:     jobRepository,
@@ -45,6 +64,7 @@ func NewJobProcessor(
 		excelGenerator:    excelGenerator,
 		emailSender:       emailSender,
 		jobQueue:          make(chan struct{}, 1),
+		failureCounter:    failureCounter,
 	}
 }
 
@@ -59,6 +79,7 @@ type processor struct {
 	jobQueue          chan struct{}
 	mu                sync.Mutex
 	ready             bool
+	failureCounter    prometheus.Counter
 }
 
 // WaitForJobs starts job queue loop and when new job appears starts processing it
@@ -313,6 +334,9 @@ func (p *processor) markJobAsFailed(ctx context.Context, jobID ref.UUID, jobErr 
 	if _, err := p.jobRepository.UpdateJob(ctx, j); err != nil {
 		p.logger.Errorw("Could not mark job as failed", "error", err)
 	}
+
+	// Tell Prometheus that the process has failed
+	p.failureCounter.Inc()
 }
 
 func (p *processor) markJobAsFinished(ctx context.Context, jobID ref.UUID) {

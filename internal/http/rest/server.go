@@ -8,6 +8,7 @@ import (
 	jobsvc "github.com/KompiTech/itsm-reporting-service/internal/domain/job/service"
 	"github.com/KompiTech/itsm-reporting-service/internal/http/rest/presenters"
 	"github.com/julienschmidt/httprouter"
+	"github.com/prometheus/client_golang/prometheus/promhttp"
 	"go.uber.org/zap"
 )
 
@@ -57,6 +58,9 @@ func NewServer(cfg Config) *Server {
 	s.jobsProcessor.WaitForJobs()
 	s.registerPresenters()
 	s.registerRoutes()
+
+	// Expose Prometheus metrics
+	s.router.Handler(http.MethodGet, "/metrics", promhttp.Handler())
 
 	return s
 }
