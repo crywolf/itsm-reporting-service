@@ -9,8 +9,9 @@ import (
 // Config contains all the configuration variables
 type Config struct {
 	// HTTP server config
-	HTTPBindAddress              string
-	HTTPBindPort                 string
+	// Local server bind address
+	HTTPBindAddress string
+	// API endpoint address that will be called from outer world (used for Location header generation)
 	HTTPExternalLocationAddress  string
 	HTTPShutdownTimeoutInSeconds int
 
@@ -52,12 +53,8 @@ func loadEnvConfig() (*Config, error) {
 		c.HTTPBindAddress = "localhost:8080" // default value
 	}
 
-	if c.HTTPBindPort, ok = os.LookupEnv("HTTP_BIND_PORT"); !ok {
-		c.HTTPBindPort = "8080" // default value
-	}
-
 	if c.HTTPExternalLocationAddress, ok = os.LookupEnv("EXTERNAL_LOCATION_ADDRESS"); !ok {
-		c.HTTPExternalLocationAddress = "http://localhost:" + c.HTTPBindPort // default value
+		c.HTTPExternalLocationAddress = "http://" + c.HTTPBindAddress // default value
 	}
 
 	c.HTTPShutdownTimeoutInSeconds = 30 // default value
