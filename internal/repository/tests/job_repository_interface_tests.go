@@ -1,25 +1,30 @@
-package memory
+package repotests
 
 import (
 	"context"
 	"testing"
+	"time"
 
 	"github.com/KompiTech/itsm-reporting-service/internal/domain/job"
 	"github.com/KompiTech/itsm-reporting-service/internal/domain/ref"
 	"github.com/KompiTech/itsm-reporting-service/internal/mocks"
+	"github.com/KompiTech/itsm-reporting-service/internal/repository"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
 )
 
-func TestJobRepositoryMemory_AddingAndGettingJob(t *testing.T) {
-	clock := mocks.NewFixedClock()
+func TestJobRepositoryAddingAndGettingJob(t *testing.T, repo repository.JobRepository, clock repository.Clock) {
 	ctx := context.Background()
-	repo := NewJobRepositoryMemory(clock)
 
 	job1 := job.Job{}
 
 	jobID, err := repo.AddJob(ctx, job1)
 	require.NoError(t, err)
+
+	nonexistentJobID := ref.UUID("7fca0b71-ffd9-4963-8f04-040faaf4f39c")
+	_, err = repo.GetJob(ctx, nonexistentJobID)
+	require.Error(t, err)
+	require.EqualError(t, err, "error loading job from repository: record was not found")
 
 	retJob, err := repo.GetJob(ctx, jobID)
 	require.NoError(t, err)
@@ -32,11 +37,8 @@ func TestJobRepositoryMemory_AddingAndGettingJob(t *testing.T) {
 	assert.Equal(t, clock.NowFormatted(), retJob.CreatedAt)
 }
 
-func TestJobRepositoryMemory_UpdateJob(t *testing.T) {
-	clock := mocks.NewFixedClock()
+func TestJobRepositoryUpdateJob(t *testing.T, repo repository.JobRepository) {
 	ctx := context.Background()
-
-	repo := NewJobRepositoryMemory(clock)
 
 	job1 := job.Job{}
 
@@ -47,6 +49,8 @@ func TestJobRepositoryMemory_UpdateJob(t *testing.T) {
 	require.NoError(t, err)
 
 	retJob.FinalStatus = "success"
+	retJobCreatedAt := retJob.CreatedAt
+	retJob.CreatedAt = "some changed value"
 
 	// update job
 	retJobID, err := repo.UpdateJob(ctx, retJob)
@@ -60,19 +64,17 @@ func TestJobRepositoryMemory_UpdateJob(t *testing.T) {
 
 	assert.Equal(t, jobID, updatedJob.UUID())
 	assert.Equal(t, "success", updatedJob.FinalStatus)
-	assert.Equal(t, retJob.CreatedAt, updatedJob.CreatedAt) // this should not be changed
+	assert.Equal(t, retJobCreatedAt, updatedJob.CreatedAt) // this should not be changed
 }
 
-func TestJobRepositoryMemory_ListJob(t *testing.T) {
-	clock := mocks.NewFixedClock()
+func TestJobRepositoryListJobs(t *testing.T, repo repository.JobRepository, clock *mocks.FixedClock, repositorySize int) {
 	ctx := context.Background()
-
-	repo := NewJobRepositoryMemory(clock)
 
 	job1 := job.Job{}
 
 	var thirdJobID, lastJobID ref.UUID
 	for i := 0; i < repositorySize+2; i++ {
+		clock.AddTime(10 * time.Second)
 		jobID, err := repo.AddJob(ctx, job1)
 		if i == 2 {
 			thirdJobID = jobID
@@ -91,11 +93,8 @@ func TestJobRepositoryMemory_ListJob(t *testing.T) {
 	assert.Equal(t, thirdJobID, retJobs[repositorySize-1].UUID(), "third job")
 }
 
-func TestJobRepositoryMemory_GetLastJob(t *testing.T) {
-	clock := mocks.NewFixedClock()
+func TestJobRepositoryGetLastJob(t *testing.T, repo repository.JobRepository, clock *mocks.FixedClock) {
 	ctx := context.Background()
-
-	repo := NewJobRepositoryMemory(clock)
 
 	_, err := repo.GetLastJob(ctx)
 	// there are no jobs yet, it should return error
@@ -104,6 +103,7 @@ func TestJobRepositoryMemory_GetLastJob(t *testing.T) {
 	job1 := job.Job{}
 	var lastJobID ref.UUID
 	for i := 0; i < 5; i++ {
+		clock.AddTime(10 * time.Second)
 		lastJobID, err = repo.AddJob(ctx, job1)
 		require.NoError(t, err)
 	}

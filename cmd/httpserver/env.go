@@ -26,6 +26,9 @@ type Config struct {
 	PostmarkMessageStream string
 	FromEmailAddress      string
 
+	// SQL database connection URL string
+	DBConnectionString string
+
 	// ITSM server address, for example "http://localhost:8081"
 	ITSMServerURI string
 
@@ -95,6 +98,11 @@ func loadEnvConfig() (*Config, error) {
 
 	if c.FromEmailAddress, ok = os.LookupEnv("FROM_EMAIL_ADDRESS"); !ok {
 		c.FromEmailAddress = "no-reply@blits-platform.com" // default value
+	}
+
+	// SQL database config
+	if c.DBConnectionString, ok = os.LookupEnv("DB_CONNECTION_STRING"); !ok {
+		return c, fmt.Errorf("env var %s not set", "DB_CONNECTION_STRING")
 	}
 
 	// ITSM server address, for example "http://localhost:8081"

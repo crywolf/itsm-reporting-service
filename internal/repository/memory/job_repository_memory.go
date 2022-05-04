@@ -54,7 +54,6 @@ func (r *jobRepositoryMemory) AddJob(_ context.Context, _ job.Job) (ref.UUID, er
 func (r *jobRepositoryMemory) UpdateJob(_ context.Context, job job.Job) (ref.UUID, error) {
 	storedJob := Job{
 		ID:                             job.UUID().String(),
-		CreatedAt:                      job.CreatedAt.String(),
 		ChannelsDownloadStartedAt:      job.ChannelsDownloadStartedAt.String(),
 		ChannelsDownloadFinishedAt:     job.ChannelsDownloadFinishedAt.String(),
 		UsersDownloadStartedAt:         job.UsersDownloadStartedAt.String(),
@@ -68,14 +67,16 @@ func (r *jobRepositoryMemory) UpdateJob(_ context.Context, job job.Job) (ref.UUI
 		FinalStatus:                    job.FinalStatus,
 	}
 
-	for i := range r.jobs {
+	for i, origJob := range r.jobs {
 		if r.jobs[i].ID == job.UUID().String() {
+			storedJob.CreatedAt = origJob.CreatedAt // this cannot be changed
+
 			r.jobs[i] = storedJob
 			return job.UUID(), nil
 		}
 	}
 
-	return job.UUID(), domain.WrapErrorf(ErrNotFound, domain.ErrorCodeNotFound, "error updating job in repository")
+	return job.UUID(), domain.WrapErrorf(repository.ErrNotFound, domain.ErrorCodeNotFound, "error updating job in repository")
 }
 
 // GetJob returns the job with the given ID from the repository
@@ -96,7 +97,7 @@ func (r jobRepositoryMemory) GetJob(_ context.Context, ID ref.UUID) (job.Job, er
 		}
 	}
 
-	return job.Job{}, domain.WrapErrorf(ErrNotFound, domain.ErrorCodeNotFound, "error loading job from repository")
+	return job.Job{}, domain.WrapErrorf(repository.ErrNotFound, domain.ErrorCodeNotFound, "error loading job from repository")
 }
 
 // GetLastJob returns the last inserted job from the repository

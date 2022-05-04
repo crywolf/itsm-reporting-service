@@ -19,6 +19,7 @@ import (
 	userdownloader "github.com/KompiTech/itsm-reporting-service/internal/domain/user/downloader"
 	"github.com/KompiTech/itsm-reporting-service/internal/http/rest"
 	"github.com/KompiTech/itsm-reporting-service/internal/repository/memory"
+	"github.com/KompiTech/itsm-reporting-service/internal/repository/sql"
 	"go.uber.org/zap"
 )
 
@@ -46,7 +47,15 @@ func main() {
 	}
 
 	clock := realClock{}
-	jobRepository := memory.NewJobRepositoryMemory(clock)
+	db, err := sql.OpenDB(config.DBConnectionString)
+	if err != nil {
+		logger.Fatalw("Error opening database", "error", err)
+	}
+
+	jobRepository, err := sql.NewJobRepositorySQL(clock, db)
+	if err != nil {
+		logger.Fatalw("Error creating jobRepositorySQL", "error", err)
+	}
 	jobService := jobsvc.NewJobService(jobRepository)
 
 	tokenSvcClient := client.NewTokenSvcClient(client.Config{
