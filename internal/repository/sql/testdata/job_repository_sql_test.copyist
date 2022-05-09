@@ -1,29 +1,29 @@
 1=DriverOpen	1:nil
-2=ConnExec	2:"CREATE TABLE IF NOT EXISTS jobs (uuid UUID PRIMARY KEY, created_at VARCHAR(30),final_status VARCHAR(255), channels_download_started_at VARCHAR(30), channels_download_finished_at VARCHAR(30), users_download_started_at VARCHAR(30), users_download_finished_at VARCHAR(30), tickets_download_started_at VARCHAR(30), tickets_download_finished_at VARCHAR(30), excel_files_generation_started_at VARCHAR(30), excel_files_generation_finished_at VARCHAR(30), emails_sending_started_at VARCHAR(30), emails_sending_finished_at VARCHAR(30) )"	1:nil
+2=ConnExec	2:"CREATE TABLE IF NOT EXISTS jobs (uuid UUID PRIMARY KEY, created_at VARCHAR(30),final_status TEXT, channels_download_started_at VARCHAR(30), channels_download_finished_at VARCHAR(30), users_download_started_at VARCHAR(30), users_download_finished_at VARCHAR(30), tickets_download_started_at VARCHAR(30), tickets_download_finished_at VARCHAR(30), excel_files_generation_started_at VARCHAR(30), excel_files_generation_finished_at VARCHAR(30), emails_sending_started_at VARCHAR(30), emails_sending_finished_at VARCHAR(30) )"	1:nil
 3=ConnExec	2:"TRUNCATE jobs"	1:nil
 4=ConnExec	2:"INSERT INTO jobs (uuid, created_at, final_status, channels_download_started_at, channels_download_finished_at, users_download_started_at, users_download_finished_at, tickets_download_started_at, tickets_download_finished_at, excel_files_generation_started_at, excel_files_generation_finished_at, emails_sending_started_at, emails_sending_finished_at) VALUES($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12, $13)"	1:nil
 5=ConnQuery	2:"SELECT uuid, created_at, final_status, channels_download_started_at, channels_download_finished_at, users_download_started_at, users_download_finished_at, tickets_download_started_at, tickets_download_finished_at, excel_files_generation_started_at, excel_files_generation_finished_at, emails_sending_started_at, emails_sending_finished_at FROM jobs WHERE uuid = $1"	1:nil
 6=RowsColumns	9:["uuid","created_at","final_status","channels_download_started_at","channels_download_finished_at","users_download_started_at","users_download_finished_at","tickets_download_started_at","tickets_download_finished_at","excel_files_generation_started_at","excel_files_generation_finished_at","emails_sending_started_at","emails_sending_finished_at"]
-7=RowsNext	11:[]	7:"EOF"
-8=RowsNext	11:[10:NTg1NjZjNDItN2E2Ny00MjYxLWE5NDMtNGQ1MjQxNmE1Nzc3,2:"2021-04-01T12:34:56+02:00",2:"",2:"",2:"",2:"",2:"",2:"",2:"",2:"",2:"",2:"",2:""]	1:nil
-9=ConnQuery	2:"SELECT uuid, created_at, final_status, channels_download_started_at, channels_download_finished_at, users_download_started_at, users_download_finished_at, tickets_download_started_at, tickets_download_finished_at, excel_files_generation_started_at, excel_files_generation_finished_at, emails_sending_started_at, emails_sending_finished_at FROM jobs ORDER BY created_at DESC LIMIT $1"	1:nil
-10=RowsNext	11:[10:N2E0NjVhNDItNzM2Mi00ZjRhLWE5NDYtNTE0NzVhNzM2ZTc3,2:"2021-04-01T12:36:56+02:00",2:"",2:"",2:"",2:"",2:"",2:"",2:"",2:"",2:"",2:"",2:""]	1:nil
-11=RowsNext	11:[10:NzQ0ZTczNzctNTk0ZS00MzQ3LTkyNzUtNzM3MzU2NmQ2MTZm,2:"2021-04-01T12:36:46+02:00",2:"",2:"",2:"",2:"",2:"",2:"",2:"",2:"",2:"",2:"",2:""]	1:nil
-12=RowsNext	11:[10:Njk0ZTRiNDEtNTI2NS00YjRhLWI5NjktNTg0YTcyNzM2MzYz,2:"2021-04-01T12:36:36+02:00",2:"",2:"",2:"",2:"",2:"",2:"",2:"",2:"",2:"",2:"",2:""]	1:nil
-13=RowsNext	11:[10:NWE0YzQzNzQtNTQ0ZC00NDU0LTgzNmYtNjE0ZTYxNzQ3OTc5,2:"2021-04-01T12:36:26+02:00",2:"",2:"",2:"",2:"",2:"",2:"",2:"",2:"",2:"",2:"",2:""]	1:nil
-14=RowsNext	11:[10:NDI0NTZkNjYtNjQ3YS00NDYzLTg1NmItNTg0MjQxNmI2YTUx,2:"2021-04-01T12:36:16+02:00",2:"",2:"",2:"",2:"",2:"",2:"",2:"",2:"",2:"",2:"",2:""]	1:nil
-15=RowsNext	11:[10:NjU3NDQ4NzMtNjI1YS00MjZhLWI4NDEtNzc2ZTc3NjU2Yjcy,2:"2021-04-01T12:36:06+02:00",2:"",2:"",2:"",2:"",2:"",2:"",2:"",2:"",2:"",2:"",2:""]	1:nil
-16=RowsNext	11:[10:NGE2YTUwNmEtN2E3MC00NjUyLTg2NDUtNjc2ZDZmNzQ2MTQ2,2:"2021-04-01T12:35:56+02:00",2:"",2:"",2:"",2:"",2:"",2:"",2:"",2:"",2:"",2:"",2:""]	1:nil
-17=RowsNext	11:[10:NGQ2MTUwNDUtNWE1MS00YzY1LTkxNTktNjg1OTdhNTI3OTU3,2:"2021-04-01T12:35:46+02:00",2:"",2:"",2:"",2:"",2:"",2:"",2:"",2:"",2:"",2:"",2:""]	1:nil
-18=RowsNext	11:[10:Nzg1MDRjNDQtNmU0YS00ZjYyLTgzNzMtNGU1NjZjNjc1NDY1,2:"2021-04-01T12:35:36+02:00",2:"",2:"",2:"",2:"",2:"",2:"",2:"",2:"",2:"",2:"",2:""]	1:nil
-19=RowsNext	11:[10:NDY3MDRjNTMtNmE0Ni00MjYzLTk4NmYtNDU0NjY2NTI3MzU3,2:"2021-04-01T12:35:26+02:00",2:"",2:"",2:"",2:"",2:"",2:"",2:"",2:"",2:"",2:"",2:""]	1:nil
-20=ConnPrepare	2:"UPDATE jobs SET final_status = $2,channels_download_started_at = $3, channels_download_finished_at = $4, users_download_started_at = $5, users_download_finished_at = $6, tickets_download_started_at = $7, tickets_download_finished_at = $8, excel_files_generation_started_at = $9, excel_files_generation_finished_at = $10, emails_sending_started_at = $11, emails_sending_finished_at = $12 WHERE uuid = $1"	1:nil
-21=StmtNumInput	3:12
-22=StmtExec	1:nil
-23=RowsNext	11:[10:NTg1NjZjNDItN2E2Ny00MjYxLWE5NDMtNGQ1MjQxNmE1Nzc3,2:"2021-04-01T12:34:56+02:00",2:"success",2:"",2:"",2:"",2:"",2:"",2:"",2:"",2:"",2:"",2:""]	1:nil
+7=RowsNext	11:[10:NTg1NjZjNDItN2E2Ny00MjYxLWE5NDMtNGQ1MjQxNmE1Nzc3,2:"2021-04-01T12:34:56+02:00",2:"",2:"",2:"",2:"",2:"",2:"",2:"",2:"",2:"",2:"",2:""]	1:nil
+8=ConnPrepare	2:"UPDATE jobs SET final_status = $2,channels_download_started_at = $3, channels_download_finished_at = $4, users_download_started_at = $5, users_download_finished_at = $6, tickets_download_started_at = $7, tickets_download_finished_at = $8, excel_files_generation_started_at = $9, excel_files_generation_finished_at = $10, emails_sending_started_at = $11, emails_sending_finished_at = $12 WHERE uuid = $1"	1:nil
+9=StmtNumInput	3:12
+10=StmtExec	1:nil
+11=RowsNext	11:[10:NTg1NjZjNDItN2E2Ny00MjYxLWE5NDMtNGQ1MjQxNmE1Nzc3,2:"2021-04-01T12:34:56+02:00",2:"success",2:"",2:"",2:"",2:"",2:"",2:"",2:"",2:"",2:"",2:""]	1:nil
+12=ConnQuery	2:"SELECT uuid, created_at, final_status, channels_download_started_at, channels_download_finished_at, users_download_started_at, users_download_finished_at, tickets_download_started_at, tickets_download_finished_at, excel_files_generation_started_at, excel_files_generation_finished_at, emails_sending_started_at, emails_sending_finished_at FROM jobs ORDER BY created_at DESC LIMIT $1"	1:nil
+13=RowsNext	11:[10:N2E0NjVhNDItNzM2Mi00ZjRhLWE5NDYtNTE0NzVhNzM2ZTc3,2:"2021-04-01T12:36:56+02:00",2:"",2:"",2:"",2:"",2:"",2:"",2:"",2:"",2:"",2:"",2:""]	1:nil
+14=RowsNext	11:[10:NzQ0ZTczNzctNTk0ZS00MzQ3LTkyNzUtNzM3MzU2NmQ2MTZm,2:"2021-04-01T12:36:46+02:00",2:"",2:"",2:"",2:"",2:"",2:"",2:"",2:"",2:"",2:"",2:""]	1:nil
+15=RowsNext	11:[10:Njk0ZTRiNDEtNTI2NS00YjRhLWI5NjktNTg0YTcyNzM2MzYz,2:"2021-04-01T12:36:36+02:00",2:"",2:"",2:"",2:"",2:"",2:"",2:"",2:"",2:"",2:"",2:""]	1:nil
+16=RowsNext	11:[10:NWE0YzQzNzQtNTQ0ZC00NDU0LTgzNmYtNjE0ZTYxNzQ3OTc5,2:"2021-04-01T12:36:26+02:00",2:"",2:"",2:"",2:"",2:"",2:"",2:"",2:"",2:"",2:"",2:""]	1:nil
+17=RowsNext	11:[10:NDI0NTZkNjYtNjQ3YS00NDYzLTg1NmItNTg0MjQxNmI2YTUx,2:"2021-04-01T12:36:16+02:00",2:"",2:"",2:"",2:"",2:"",2:"",2:"",2:"",2:"",2:"",2:""]	1:nil
+18=RowsNext	11:[10:NjU3NDQ4NzMtNjI1YS00MjZhLWI4NDEtNzc2ZTc3NjU2Yjcy,2:"2021-04-01T12:36:06+02:00",2:"",2:"",2:"",2:"",2:"",2:"",2:"",2:"",2:"",2:"",2:""]	1:nil
+19=RowsNext	11:[10:NGE2YTUwNmEtN2E3MC00NjUyLTg2NDUtNjc2ZDZmNzQ2MTQ2,2:"2021-04-01T12:35:56+02:00",2:"",2:"",2:"",2:"",2:"",2:"",2:"",2:"",2:"",2:"",2:""]	1:nil
+20=RowsNext	11:[10:NGQ2MTUwNDUtNWE1MS00YzY1LTkxNTktNjg1OTdhNTI3OTU3,2:"2021-04-01T12:35:46+02:00",2:"",2:"",2:"",2:"",2:"",2:"",2:"",2:"",2:"",2:"",2:""]	1:nil
+21=RowsNext	11:[10:Nzg1MDRjNDQtNmU0YS00ZjYyLTgzNzMtNGU1NjZjNjc1NDY1,2:"2021-04-01T12:35:36+02:00",2:"",2:"",2:"",2:"",2:"",2:"",2:"",2:"",2:"",2:"",2:""]	1:nil
+22=RowsNext	11:[10:NDY3MDRjNTMtNmE0Ni00MjYzLTk4NmYtNDU0NjY2NTI3MzU3,2:"2021-04-01T12:35:26+02:00",2:"",2:"",2:"",2:"",2:"",2:"",2:"",2:"",2:"",2:"",2:""]	1:nil
+23=RowsNext	11:[]	7:"EOF"
 24=ConnQuery	2:"SELECT uuid, created_at, final_status, channels_download_started_at, channels_download_finished_at, users_download_started_at, users_download_finished_at, tickets_download_started_at, tickets_download_finished_at, excel_files_generation_started_at, excel_files_generation_finished_at, emails_sending_started_at, emails_sending_finished_at FROM jobs ORDER BY created_at DESC LIMIT 1"	1:nil
 
-"TestJobRepositorySQL_AddingAndGettingJob"=1,2,3,4,5,6,7,5,6,8
-"TestJobRepositorySQL_ListJobs"=1,2,3,4,4,4,4,4,4,4,4,4,4,4,4,9,6,10,11,12,13,14,15,16,17,18,19,7
-"TestJobRepositorySQL_UpdateJob"=1,2,3,4,5,6,8,20,20,21,22,5,6,23
-"TestJobRepositorySQL_GetLastJob"=1,2,3,24,6,7,4,4,4,4,4,24,6,17
+"TestJobRepositorySQL_UpdateJob"=1,2,3,4,5,6,7,8,8,9,10,5,6,11
+"TestJobRepositorySQL_ListJobs"=1,2,3,4,4,4,4,4,4,4,4,4,4,4,4,12,6,13,14,15,16,17,18,19,20,21,22,23
+"TestJobRepositorySQL_AddingAndGettingJob"=1,2,3,4,5,6,23,5,6,7
+"TestJobRepositorySQL_GetLastJob"=1,2,3,24,6,23,4,4,4,4,4,24,6,20

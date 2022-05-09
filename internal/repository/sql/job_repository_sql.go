@@ -28,7 +28,7 @@ type jobRepositorySQL struct {
 
 // OpenDB return new database handle
 func OpenDB(DBConnString string) (*sql.DB, error) {
-	db, err := sql.Open("copyist_postgres", DBConnString)
+	db, err := sql.Open("postgres", DBConnString)
 	if err != nil {
 		return nil, fmt.Errorf("error connecting to DB: %v", err)
 	}
@@ -46,7 +46,7 @@ func NewJobRepositorySQL(clock repository.Clock, db *sql.DB, rand io.Reader) (re
 		"CREATE TABLE IF NOT EXISTS " + tableName + " (" +
 			"uuid UUID PRIMARY KEY, " +
 			"created_at VARCHAR(30)," +
-			"final_status VARCHAR(255), " +
+			"final_status TEXT, " +
 			"channels_download_started_at VARCHAR(30), " +
 			"channels_download_finished_at VARCHAR(30), " +
 			"users_download_started_at VARCHAR(30), " +

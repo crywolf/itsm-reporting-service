@@ -32,7 +32,7 @@ func newJobRepositorySQL(t *testing.T) (repository.JobRepository, *mocks.FixedCl
 
 	if DB == nil {
 		var err error
-		DB, err = OpenDB(connStr)
+		DB, err = sql.Open("copyist_postgres", connStr)
 		if err != nil {
 			panic(err)
 		}
