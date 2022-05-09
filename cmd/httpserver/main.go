@@ -52,7 +52,7 @@ func main() {
 		logger.Fatalw("Error opening database", "error", err)
 	}
 
-	jobRepository, err := sql.NewJobRepositorySQL(clock, db)
+	jobRepository, err := sql.NewJobRepositorySQL(clock, db, nil)
 	if err != nil {
 		logger.Fatalw("Error creating jobRepositorySQL", "error", err)
 	}

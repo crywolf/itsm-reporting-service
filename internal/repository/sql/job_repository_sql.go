@@ -28,18 +28,18 @@ type jobRepositorySQL struct {
 
 // OpenDB return new database handle
 func OpenDB(DBConnString string) (*sql.DB, error) {
-	//	fmt.Println("\n\n====> OPENING DB ")
-
-	db, err := sql.Open("postgres", DBConnString)
+	db, err := sql.Open("copyist_postgres", DBConnString)
 	if err != nil {
-		return nil, fmt.Errorf("error conneting to DB: %v", err)
+		return nil, fmt.Errorf("error connecting to DB: %v", err)
 	}
 
 	return db, nil
 }
 
-// NewJobRepositorySQL returns new initialized job repository that keeps data in SQL database
-func NewJobRepositorySQL(clock repository.Clock, db *sql.DB) (repository.JobRepository, error) {
+// NewJobRepositorySQL returns new initialized job repository that keeps data in SQL database.
+// rand is random number generator, which implements io.Reader. Calling it with nil sets the random number generator
+// to the default generator. See repository.GenerateUUID for details.
+func NewJobRepositorySQL(clock repository.Clock, db *sql.DB, rand io.Reader) (repository.JobRepository, error) {
 	tableName := "jobs"
 
 	if _, err := db.Exec(
@@ -63,6 +63,7 @@ func NewJobRepositorySQL(clock repository.Clock, db *sql.DB) (repository.JobRepo
 	}
 
 	return &jobRepositorySQL{
+		Rand:      rand,
 		clock:     clock,
 		db:        db,
 		tableName: tableName,
