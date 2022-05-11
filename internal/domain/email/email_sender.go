@@ -63,6 +63,10 @@ func (s sender) SendEmails(ctx context.Context) error {
 
 	s.logger.Infof("Emails to send: %d", len(emails))
 
+	if len(emails) == 0 {
+		return nil
+	}
+
 	req, err := http.NewRequestWithContext(ctx, http.MethodPost, s.postmarkServerURL, nil)
 	if err != nil {
 		return err
