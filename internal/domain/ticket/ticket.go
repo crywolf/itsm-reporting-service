@@ -3,6 +3,7 @@ package ticket
 // Ticket domain object
 type Ticket struct {
 	UserEmail   string
+	ChannelID   string
 	ChannelName string
 	TicketType  string
 	TicketData  Data

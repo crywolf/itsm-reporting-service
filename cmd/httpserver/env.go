@@ -29,6 +29,9 @@ type Config struct {
 	// SQL database connection URL string
 	DBConnectionString string
 
+	// email addresses of SD agents, separated by comma
+	SDAgentEmails string
+
 	// ITSM server address, for example "http://localhost:8081"
 	ITSMServerURI string
 
@@ -104,6 +107,9 @@ func loadEnvConfig() (*Config, error) {
 	if c.DBConnectionString, ok = os.LookupEnv("DB_CONNECTION_STRING"); !ok {
 		return c, fmt.Errorf("env var %s not set", "DB_CONNECTION_STRING")
 	}
+
+	// email addresses of SD agents, separated by comma
+	c.SDAgentEmails = os.Getenv("SD_AGENT_EMAILS")
 
 	// ITSM server address, for example "http://localhost:8081"
 	if c.ITSMServerURI, ok = os.LookupEnv("ITSM_SERVER_URI"); !ok {

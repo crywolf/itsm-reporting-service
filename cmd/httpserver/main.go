@@ -5,6 +5,7 @@ import (
 	"net/http"
 	"os"
 	"os/signal"
+	"strings"
 	"syscall"
 	"time"
 
@@ -79,7 +80,8 @@ func main() {
 	)
 	ticketDownloader := ticketdownloader.NewTicketDownloader(logger, channelRepository, userRepository, ticketRepository, ticketClient)
 
-	excelGen := excel.NewExcelGenerator(logger, ticketRepository)
+	sdAgentEmails := strings.Split(config.SDAgentEmails, ",")
+	excelGen := excel.NewExcelGenerator(logger, ticketRepository, sdAgentEmails)
 
 	emailSender := email.NewEmailSender(
 		logger,
@@ -87,8 +89,10 @@ func main() {
 		config.PostmarkServerToken,
 		config.PostmarkMessageStream,
 		config.FromEmailAddress,
-		excelGen.DirName(),
+		excelGen.FEDirPath(),
+		excelGen.SDDirPath(),
 		ticketRepository,
+		sdAgentEmails,
 	)
 
 	jobProcessor := jobprocessor.NewJobProcessor(

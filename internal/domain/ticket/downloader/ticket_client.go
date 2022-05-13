@@ -79,7 +79,6 @@ func (c ticketClient) GetRequests(ctx context.Context, channel channel.Channel, 
 			return ticketList, domain.WrapErrorf(err, domain.ErrorCodeUnknown, "could not decode request service Ok response")
 		}
 
-		//fmt.Println(">> GetRequests for", user.Name, len(ticketList), bookmark)
 		if len(ticketList) < 10 {
 			break
 		}
@@ -138,6 +137,7 @@ func (c ticketClient) processResponse(resp *http.Response, user user.User, chann
 
 		ticketList = append(ticketList, ticket.Ticket{
 			UserEmail:   user.Email,
+			ChannelID:   channel.ChannelID,
 			ChannelName: channel.Name,
 			TicketType:  v.TicketType,
 			TicketData: ticket.Data{

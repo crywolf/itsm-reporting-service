@@ -51,9 +51,14 @@ func Test_processor_ProcessNewJob(t *testing.T) {
 		ticketDownloader.On("DownloadTickets").Return(nil).Once()
 
 		excelGen := new(mocks.ExcelGeneratorMock)
+		excelGen.On("GenerateExcelFilesForFieldEngineers").Return(nil).Once()
+		excelGen.On("GenerateExcelFilesForServiceDesk").Return(nil).Once()
 
 		emailSender := new(mocks.EmailSenderMock)
-		emailSender.On("SendEmails").Return(nil).Once()
+		emailSender.On("SendEmailsForFieldEngineers").Return(nil).Once()
+		emailSender.Wg.Add(1)
+
+		emailSender.On("SendEmailsForServiceDesk").Return(nil).Once()
 		emailSender.Wg.Add(1)
 
 		jp := NewJobProcessor(logger, jobsRepo, channelDownloader, userDownloader, ticketDownloader, excelGen, emailSender)
@@ -74,6 +79,7 @@ func Test_processor_ProcessNewJob(t *testing.T) {
 		channelDownloader.AssertExpectations(t)
 		userDownloader.AssertExpectations(t)
 		ticketDownloader.AssertExpectations(t)
+		excelGen.AssertExpectations(t)
 		emailSender.AssertExpectations(t)
 	})
 
@@ -96,9 +102,14 @@ func Test_processor_ProcessNewJob(t *testing.T) {
 		ticketDownloader.On("DownloadTickets").Return(nil).Twice()
 
 		excelGen := new(mocks.ExcelGeneratorMock)
+		excelGen.On("GenerateExcelFilesForFieldEngineers").Return(nil).Twice()
+		excelGen.On("GenerateExcelFilesForServiceDesk").Return(nil).Twice()
 
 		emailSender := new(mocks.EmailSenderMock)
-		emailSender.On("SendEmails").Return(nil).Twice()
+		emailSender.On("SendEmailsForFieldEngineers").Return(nil).Twice()
+		emailSender.Wg.Add(2)
+
+		emailSender.On("SendEmailsForServiceDesk").Return(nil).Twice()
 		emailSender.Wg.Add(2)
 
 		jp := NewJobProcessor(
@@ -125,6 +136,7 @@ func Test_processor_ProcessNewJob(t *testing.T) {
 		channelDownloader.AssertExpectations(t)
 		userDownloader.AssertExpectations(t)
 		ticketDownloader.AssertExpectations(t)
+		excelGen.AssertExpectations(t)
 		emailSender.AssertExpectations(t)
 	})
 }
@@ -179,6 +191,7 @@ func Test_processor_DataProcessing(t *testing.T) {
 
 	inc1 := ticket.Ticket{
 		UserEmail:   u1.Email,
+		ChannelID:   ch1.ChannelID,
 		ChannelName: ch1.Name,
 		TicketType:  "INCIDENT",
 		TicketData: ticket.Data{
@@ -190,6 +203,7 @@ func Test_processor_DataProcessing(t *testing.T) {
 	}
 	inc2 := ticket.Ticket{
 		UserEmail:   u1.Email,
+		ChannelID:   ch1.ChannelID,
 		ChannelName: ch1.Name,
 		TicketType:  "INCIDENT",
 		TicketData: ticket.Data{
@@ -201,6 +215,7 @@ func Test_processor_DataProcessing(t *testing.T) {
 	}
 	inc3 := ticket.Ticket{
 		UserEmail:   u1.Email,
+		ChannelID:   ch1.ChannelID,
 		ChannelName: ch1.Name,
 		TicketType:  "INCIDENT",
 		TicketData: ticket.Data{
@@ -214,6 +229,7 @@ func Test_processor_DataProcessing(t *testing.T) {
 
 	inc4 := ticket.Ticket{
 		UserEmail:   u3.Email,
+		ChannelID:   ch2.ChannelID,
 		ChannelName: ch2.Name,
 		TicketType:  "INCIDENT",
 		TicketData: ticket.Data{
@@ -227,6 +243,7 @@ func Test_processor_DataProcessing(t *testing.T) {
 
 	req1 := ticket.Ticket{
 		UserEmail:   u1.Email,
+		ChannelID:   ch1.ChannelID,
 		ChannelName: ch1.Name,
 		TicketType:  "K_REQUEST",
 		TicketData: ticket.Data{
@@ -240,6 +257,7 @@ func Test_processor_DataProcessing(t *testing.T) {
 
 	req2 := ticket.Ticket{
 		UserEmail:   u2.Email,
+		ChannelID:   ch1.ChannelID,
 		ChannelName: ch1.Name,
 		TicketType:  "K_REQUEST",
 		TicketData: ticket.Data{
@@ -275,10 +293,14 @@ func Test_processor_DataProcessing(t *testing.T) {
 	ticketRepository := memory.NewTicketRepositoryMemory()
 	ticketDownloader := ticketdownloader.NewTicketDownloader(logger, channelRepository, userRepository, ticketRepository, ticketClient)
 
-	excelGen := excel.NewExcelGenerator(logger, ticketRepository)
+	sdAgentEmails := []string{"firstSDAgent@email.test", "secondSDAgent@email.test", "thirdSDAgent@email.test"}
+	excelGen := excel.NewExcelGenerator(logger, ticketRepository, sdAgentEmails)
 
 	emailSender := new(mocks.EmailSenderMock)
-	emailSender.On("SendEmails").Return(nil)
+	emailSender.On("SendEmailsForFieldEngineers").Return(nil)
+	emailSender.Wg.Add(1)
+
+	emailSender.On("SendEmailsForServiceDesk").Return(nil)
 	emailSender.Wg.Add(1)
 
 	jp := NewJobProcessor(
@@ -310,7 +332,7 @@ func Test_processor_DataProcessing(t *testing.T) {
 	assert.Len(t, expectedUserListCh1, len(userListChan1), "len of users in channel 1")
 	assert.Len(t, expectedUserListCh2, len(userListChan2), "len of users in channel 2")
 
-	expectedTicketListU1, err := ticketRepository.GetTicketsByEmail(ctx, email1)
+	expectedTicketListU1, err := ticketRepository.GetTicketsByEmailAddress(ctx, email1)
 	require.NoError(t, err)
 
 	assert.Len(t, expectedTicketListU1, 4, "len of tickets for email 1 = user 1")
@@ -318,7 +340,7 @@ func Test_processor_DataProcessing(t *testing.T) {
 		assert.Equal(t, tckt.UserEmail, email1)
 	}
 
-	expectedTicketListU2, err := ticketRepository.GetTicketsByEmail(ctx, email2)
+	expectedTicketListU2, err := ticketRepository.GetTicketsByEmailAddress(ctx, email2)
 	require.NoError(t, err)
 
 	assert.Len(t, expectedTicketListU2, 2, "len of tickets for email 2 = user2 + user3")
@@ -327,12 +349,22 @@ func Test_processor_DataProcessing(t *testing.T) {
 	}
 
 	// check generated Excel files
-	files, err := os.ReadDir(excelGen.DirName())
+	// 1) files for field engineers
+	filesFE, err := os.ReadDir(excelGen.FEDirPath())
 	require.NoError(t, err)
 
-	assert.Len(t, files, 2, "Excel files count == email addresses count")
-	assert.Equal(t, files[0].Name(), email1+".xlsx")
-	assert.Equal(t, files[1].Name(), email2+".xlsx")
+	assert.Len(t, filesFE, 2, "Excel files count for FE == email addresses count")
+	assert.Equal(t, filesFE[0].Name(), email1+".xlsx")
+	assert.Equal(t, filesFE[1].Name(), email2+".xlsx")
+
+	// 2) files for service desk
+	filesSD, err := os.ReadDir(excelGen.SDDirPath())
+	require.NoError(t, err)
+
+	assert.Len(t, filesSD, 3, "Excel files count for SD == email addresses count")
+	assert.Equal(t, filesSD[0].Name(), sdAgentEmails[0]+".xlsx")
+	assert.Equal(t, filesSD[1].Name(), sdAgentEmails[1]+".xlsx")
+	assert.Equal(t, filesSD[2].Name(), sdAgentEmails[2]+".xlsx")
 
 	jobsRepo.AssertExpectations(t)
 	channelClient.AssertExpectations(t)

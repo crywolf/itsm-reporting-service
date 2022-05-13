@@ -30,7 +30,7 @@ func (r *ticketRepositoryMemory) AddTicketList(_ context.Context, ticketList tic
 	return nil
 }
 
-func (r *ticketRepositoryMemory) GetTicketsByEmail(_ context.Context, userEmail string) (ticket.List, error) {
+func (r *ticketRepositoryMemory) GetTicketsByEmailAddress(_ context.Context, userEmail string) (ticket.List, error) {
 	r.mu.Lock()
 	defer r.mu.Unlock()
 
@@ -50,7 +50,32 @@ func (r *ticketRepositoryMemory) GetTicketsByEmail(_ context.Context, userEmail 
 	return list, nil
 }
 
-func (r *ticketRepositoryMemory) GetDistinctEmails(_ context.Context) ([]string, error) {
+func (r *ticketRepositoryMemory) GetTicketsByChannelID(_ context.Context, channelID string) (ticket.List, error) {
+	r.mu.Lock()
+	defer r.mu.Unlock()
+
+	var list ticket.List
+
+	// sort by ticket type - first will be Incidents, then Requests
+	sort.Slice(r.tickets, func(i, j int) bool {
+		return r.tickets[i].TicketType < r.tickets[j].TicketType
+	})
+
+	// sort (i.e. group) by email addresses
+	sort.Slice(r.tickets, func(i, j int) bool {
+		return r.tickets[i].UserEmail < r.tickets[j].UserEmail
+	})
+
+	for _, t := range r.tickets {
+		if t.ChannelID == channelID {
+			list = append(list, t)
+		}
+	}
+
+	return list, nil
+}
+
+func (r *ticketRepositoryMemory) GetDistinctEmailAddresses(_ context.Context) ([]string, error) {
 	r.mu.Lock()
 	defer r.mu.Unlock()
 
@@ -70,6 +95,28 @@ func (r *ticketRepositoryMemory) GetDistinctEmails(_ context.Context) ([]string,
 	}
 
 	return emails, nil
+}
+
+func (r *ticketRepositoryMemory) GetDistinctChannelIDs(_ context.Context) ([]string, error) {
+	r.mu.Lock()
+	defer r.mu.Unlock()
+
+	var channelIDs []string
+	channelsMap := make(map[string]bool)
+
+	for _, t := range r.tickets {
+		_, found := channelsMap[t.ChannelID]
+		if found {
+			continue
+		}
+		channelsMap[t.ChannelID] = true
+	}
+
+	for channel := range channelsMap {
+		channelIDs = append(channelIDs, channel)
+	}
+
+	return channelIDs, nil
 }
 
 func (r *ticketRepositoryMemory) Truncate(_ context.Context) error {
