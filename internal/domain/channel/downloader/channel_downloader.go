@@ -2,6 +2,7 @@ package channeldownloader
 
 import (
 	"context"
+	"fmt"
 
 	"github.com/KompiTech/itsm-reporting-service/internal/repository"
 )
@@ -32,6 +33,9 @@ func (d *channelDownloader) DownloadChannelList(ctx context.Context) error {
 	if err != nil {
 		return err
 	}
+
+	// TODO
+	fmt.Println("\nCHANNEL LIST:", channelList)
 
 	if err := d.channelRepository.StoreChannelList(ctx, channelList); err != nil {
 		return err

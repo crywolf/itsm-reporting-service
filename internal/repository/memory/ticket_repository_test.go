@@ -2,7 +2,6 @@ package memory
 
 import (
 	"context"
-	"sort"
 	"testing"
 
 	"github.com/KompiTech/itsm-reporting-service/internal/domain/ticket"
@@ -109,10 +108,21 @@ func TestTicketRepositoryMemory_AddingAndGettingTickets(t *testing.T) {
 		},
 	}
 
+	incNoEmail := ticket.Ticket{
+		UserEmail:   "", // Not Assigned Incident
+		ChannelName: "Other Channel",
+		ChannelID:   channel2ID,
+		TicketType:  "INCIDENT",
+		TicketData: ticket.Data{
+			Number:           "INC5874236",
+			ShortDescription: "Not assigned incident",
+		},
+	}
+
 	inc6 := ticket.Ticket{
 		UserEmail:   "first@user.com",
 		ChannelID:   channel2ID,
-		ChannelName: "Some Channel",
+		ChannelName: "Other Channel",
 		TicketType:  "INCIDENT",
 		TicketData: ticket.Data{
 			Number:           "INC32658",
@@ -120,7 +130,7 @@ func TestTicketRepositoryMemory_AddingAndGettingTickets(t *testing.T) {
 		},
 	}
 
-	list2 := ticket.List{req2, req3, inc4, inc5, inc6}
+	list2 := ticket.List{req2, req3, inc4, inc5, incNoEmail, inc6}
 	err = repo.AddTicketList(ctx, list2)
 	require.NoError(t, err)
 
@@ -147,25 +157,26 @@ func TestTicketRepositoryMemory_AddingAndGettingTickets(t *testing.T) {
 	retTicketListByChannel2, err := repo.GetTicketsByChannelID(ctx, channel2ID)
 	require.NoError(t, err)
 
-	assert.Len(t, retTicketListByChannel2, 8)
+	assert.Len(t, retTicketListByChannel2, 9)
 	// list should start with incidents for user 1 and requests should follow after incidents
-	assert.Equal(t, inc6, retTicketListByChannel2[0])
-	assert.Equal(t, inc2, retTicketListByChannel2[1])
-	assert.Equal(t, inc3, retTicketListByChannel2[2])
-	assert.Equal(t, inc4, retTicketListByChannel2[3])
-	assert.Equal(t, req2, retTicketListByChannel2[4])
+	assert.Equal(t, incNoEmail, retTicketListByChannel2[0])
+	assert.Equal(t, inc6, retTicketListByChannel2[1])
+	assert.Equal(t, inc2, retTicketListByChannel2[2])
+	assert.Equal(t, inc3, retTicketListByChannel2[3])
+	assert.Equal(t, inc4, retTicketListByChannel2[4])
+	assert.Equal(t, req2, retTicketListByChannel2[5])
 
 	// list should continue with incidents for user 2 and requests should follow after incidents
-	assert.Equal(t, inc5, retTicketListByChannel2[5])
-	assert.Equal(t, req1, retTicketListByChannel2[6])
-	assert.Equal(t, req3, retTicketListByChannel2[7])
+	assert.Equal(t, inc5, retTicketListByChannel2[6])
+	assert.Equal(t, req1, retTicketListByChannel2[7])
+	assert.Equal(t, req3, retTicketListByChannel2[8])
 
 	// GetDistinctEmailAddresses
 	retEmails, err := repo.GetDistinctEmailAddresses(ctx)
 	require.NoError(t, err)
 
 	assert.Len(t, retEmails, 3)
-	sort.Strings(retEmails) // sort returned emails to enable easy testing
+
 	assert.Equal(t, "first@user.com", retEmails[0])
 	assert.Equal(t, "second@user.com", retEmails[1])
 	assert.Equal(t, "third@user.com", retEmails[2])
@@ -175,6 +186,6 @@ func TestTicketRepositoryMemory_AddingAndGettingTickets(t *testing.T) {
 	require.NoError(t, err)
 
 	assert.Len(t, retChannels, 2)
-	assert.Equal(t, channel1ID, retChannels[0])
-	assert.Equal(t, channel2ID, retChannels[1])
+	assert.Equal(t, channel2ID, retChannels[0])
+	assert.Equal(t, channel1ID, retChannels[1])
 }

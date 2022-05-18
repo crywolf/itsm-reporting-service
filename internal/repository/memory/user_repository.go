@@ -29,19 +29,17 @@ func (r *userRepositoryMemory) AddUserList(_ context.Context, userList user.List
 	return nil
 }
 
-func (r *userRepositoryMemory) GetUsersByChannel(_ context.Context, channelID string) (user.List, error) {
+func (r *userRepositoryMemory) GetUserInChannel(_ context.Context, channelID, userID string) (user.User, error) {
 	r.mu.Lock()
 	defer r.mu.Unlock()
 
-	var list user.List
-
 	for _, u := range r.users {
-		if u.ChannelID == channelID {
-			list = append(list, u)
+		if u.ChannelID == channelID && u.UserID == userID {
+			return u, nil
 		}
 	}
 
-	return list, nil
+	return user.User{}, repository.ErrNotFound
 }
 
 func (r *userRepositoryMemory) Truncate(_ context.Context) error {

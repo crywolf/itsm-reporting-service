@@ -115,7 +115,10 @@ func (g excelGen) generateExcelFilesForFE(ctx context.Context, emails []string) 
 		if err := f.SetColWidth(sheet, "A", "B", 13); err != nil {
 			return domain.WrapErrorf(err, domain.ErrorCodeUnknown, "could not write data to Excel file '%s'", filename)
 		}
-		if err := f.SetColWidth(sheet, "C", "D", 45); err != nil {
+		if err := f.SetColWidth(sheet, "C", "C", 10); err != nil {
+			return domain.WrapErrorf(err, domain.ErrorCodeUnknown, "could not write data to Excel file '%s'", filename)
+		}
+		if err := f.SetColWidth(sheet, "D", "E", 45); err != nil {
 			return domain.WrapErrorf(err, domain.ErrorCodeUnknown, "could not write data to Excel file '%s'", filename)
 		}
 
@@ -129,10 +132,13 @@ func (g excelGen) generateExcelFilesForFE(ctx context.Context, emails []string) 
 		if err := f.SetCellValue(sheet, "B3", "Number"); err != nil {
 			return domain.WrapErrorf(err, domain.ErrorCodeUnknown, "could not write data to Excel file '%s'", filename)
 		}
-		if err := f.SetCellValue(sheet, "C3", "Short description"); err != nil {
+		if err := f.SetCellValue(sheet, "C3", "State"); err != nil {
 			return domain.WrapErrorf(err, domain.ErrorCodeUnknown, "could not write data to Excel file '%s'", filename)
 		}
-		if err := f.SetCellValue(sheet, "D3", "Location"); err != nil {
+		if err := f.SetCellValue(sheet, "D3", "Short description"); err != nil {
+			return domain.WrapErrorf(err, domain.ErrorCodeUnknown, "could not write data to Excel file '%s'", filename)
+		}
+		if err := f.SetCellValue(sheet, "E3", "Location"); err != nil {
 			return domain.WrapErrorf(err, domain.ErrorCodeUnknown, "could not write data to Excel file '%s'", filename)
 		}
 
@@ -145,7 +151,7 @@ func (g excelGen) generateExcelFilesForFE(ctx context.Context, emails []string) 
 			return domain.WrapErrorf(err, domain.ErrorCodeUnknown, "could not save file '%s'", filename)
 		}
 
-		g.logger.Infow("Excel file generated", "for", email, "open tickets", len(userTickets))
+		g.logger.Infow("Excel file for FE generated", "for", email, "open tickets", len(userTickets))
 	}
 
 	return nil
@@ -185,7 +191,13 @@ func (g excelGen) generateExcelFilesForSD(ctx context.Context, emails []string) 
 		if err := f.SetColWidth(sheet, "A", "B", 13); err != nil {
 			return domain.WrapErrorf(err, domain.ErrorCodeUnknown, "could not write data to Excel file '%s'", filename)
 		}
-		if err := f.SetColWidth(sheet, "C", "E", 45); err != nil {
+		if err := f.SetColWidth(sheet, "C", "C", 10); err != nil {
+			return domain.WrapErrorf(err, domain.ErrorCodeUnknown, "could not write data to Excel file '%s'", filename)
+		}
+		if err := f.SetColWidth(sheet, "D", "E", 45); err != nil {
+			return domain.WrapErrorf(err, domain.ErrorCodeUnknown, "could not write data to Excel file '%s'", filename)
+		}
+		if err := f.SetColWidth(sheet, "F", "I", 20); err != nil {
 			return domain.WrapErrorf(err, domain.ErrorCodeUnknown, "could not write data to Excel file '%s'", filename)
 		}
 
@@ -199,13 +211,25 @@ func (g excelGen) generateExcelFilesForSD(ctx context.Context, emails []string) 
 		if err := f.SetCellValue(sheet, "B3", "Number"); err != nil {
 			return domain.WrapErrorf(err, domain.ErrorCodeUnknown, "could not write data to Excel file '%s'", filename)
 		}
-		if err := f.SetCellValue(sheet, "C3", "Short description"); err != nil {
+		if err := f.SetCellValue(sheet, "C3", "State"); err != nil {
 			return domain.WrapErrorf(err, domain.ErrorCodeUnknown, "could not write data to Excel file '%s'", filename)
 		}
-		if err := f.SetCellValue(sheet, "D3", "Location"); err != nil {
+		if err := f.SetCellValue(sheet, "D3", "Short description"); err != nil {
 			return domain.WrapErrorf(err, domain.ErrorCodeUnknown, "could not write data to Excel file '%s'", filename)
 		}
-		if err := f.SetCellValue(sheet, "E3", "Assigned to"); err != nil {
+		if err := f.SetCellValue(sheet, "E3", "Location"); err != nil {
+			return domain.WrapErrorf(err, domain.ErrorCodeUnknown, "could not write data to Excel file '%s'", filename)
+		}
+		if err := f.SetCellValue(sheet, "F3", "Assigned to (Name)"); err != nil {
+			return domain.WrapErrorf(err, domain.ErrorCodeUnknown, "could not write data to Excel file '%s'", filename)
+		}
+		if err := f.SetCellValue(sheet, "G3", "Assigned to (Email)"); err != nil {
+			return domain.WrapErrorf(err, domain.ErrorCodeUnknown, "could not write data to Excel file '%s'", filename)
+		}
+		if err := f.SetCellValue(sheet, "H3", "Assigned to (Org)"); err != nil {
+			return domain.WrapErrorf(err, domain.ErrorCodeUnknown, "could not write data to Excel file '%s'", filename)
+		}
+		if err := f.SetCellValue(sheet, "I3", "Created at"); err != nil {
 			return domain.WrapErrorf(err, domain.ErrorCodeUnknown, "could not write data to Excel file '%s'", filename)
 		}
 
@@ -218,7 +242,7 @@ func (g excelGen) generateExcelFilesForSD(ctx context.Context, emails []string) 
 			return domain.WrapErrorf(err, domain.ErrorCodeUnknown, "could not save file '%s'", filename)
 		}
 
-		g.logger.Infow("Excel file generated", "for", email, "open tickets", len(channelTickets))
+		g.logger.Infow("Excel file for SD generated", "for", email, "open tickets", len(channelTickets))
 	}
 
 	return nil
@@ -248,15 +272,30 @@ func (g excelGen) addRowsWithTicketData(f *excelize.File, userTickets ticket.Lis
 		if err := f.SetCellValue(sheet, "B"+row, t.TicketData.Number); err != nil {
 			return domain.WrapErrorf(err, domain.ErrorCodeUnknown, "could not write data to Excel file '%s'", filename)
 		}
-		if err := f.SetCellValue(sheet, "C"+row, t.TicketData.ShortDescription); err != nil {
+		if err := f.SetCellValue(sheet, "C"+row, t.TicketData.StateName()); err != nil {
 			return domain.WrapErrorf(err, domain.ErrorCodeUnknown, "could not write data to Excel file '%s'", filename)
 		}
-		if err := f.SetCellValue(sheet, "D"+row, t.TicketData.Location); err != nil {
+		if err := f.SetCellValue(sheet, "D"+row, t.TicketData.ShortDescription); err != nil {
+			return domain.WrapErrorf(err, domain.ErrorCodeUnknown, "could not write data to Excel file '%s'", filename)
+		}
+		if err := f.SetCellValue(sheet, "E"+row, t.TicketData.Location); err != nil {
 			return domain.WrapErrorf(err, domain.ErrorCodeUnknown, "could not write data to Excel file '%s'", filename)
 		}
 
-		if withAssignedTo && t.UserEmail != "" {
-			if err := f.SetCellValue(sheet, "E"+row, t.UserEmail); err != nil {
+		if withAssignedTo {
+			if t.UserEmail != "" {
+				if err := f.SetCellValue(sheet, "F"+row, t.UserName); err != nil {
+					return domain.WrapErrorf(err, domain.ErrorCodeUnknown, "could not write data to Excel file '%s'", filename)
+				}
+				if err := f.SetCellValue(sheet, "G"+row, t.UserEmail); err != nil {
+					return domain.WrapErrorf(err, domain.ErrorCodeUnknown, "could not write data to Excel file '%s'", filename)
+				}
+				if err := f.SetCellValue(sheet, "H"+row, t.UserOrgName); err != nil {
+					return domain.WrapErrorf(err, domain.ErrorCodeUnknown, "could not write data to Excel file '%s'", filename)
+				}
+			}
+
+			if err := f.SetCellValue(sheet, "I"+row, t.TicketData.CreatedAtDate()); err != nil {
 				return domain.WrapErrorf(err, domain.ErrorCodeUnknown, "could not write data to Excel file '%s'", filename)
 			}
 		}

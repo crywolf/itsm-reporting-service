@@ -29,7 +29,7 @@ func NewTokenSvcClient(config Config) TokenSvcClient {
 }
 
 func (c *tokenSvcClient) GetToken() (string, error) {
-	timeout := 5 * time.Second
+	timeout := 15 * time.Second
 	refresher, err := tokget.NewRefresherFromReader(
 		strings.NewReader(c.config.AssertionToken),
 		c.config.AssertionTokenEndpoint,

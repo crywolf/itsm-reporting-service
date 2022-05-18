@@ -69,8 +69,6 @@ func (s sender) SendEmailsForFieldEngineers(ctx context.Context) error {
 		return err
 	}
 
-	// TODO
-	addresses = []string{"Eduardo.cabrera@kompitech.com"}
 	s.logger.Info("Sending emails for Field Engineers")
 
 	caption := "<b>Hi, below are open tickets currently assigned to you.</b>"
@@ -172,10 +170,8 @@ func (s sender) prepareEmails(addresses []string, caption, subject, attachmentsD
 		text := subject
 
 		e := Email{
-			From: s.fromEmailAddress,
-			// TODO
-			//To:       address,
-			To:       "vojtech.toman@kompitech.com",
+			From:     s.fromEmailAddress,
+			To:       address,
 			Subject:  subject,
 			HtmlBody: html,
 			TextBody: text,
@@ -230,7 +226,10 @@ func (s sender) renderHTML(caption, excelFile string) (string, error) {
 			emptyColsNum = totalColsNum - len(row)
 		}
 
-		for _, colCell := range row {
+		for i, colCell := range row {
+			if i == totalColsNum {
+				break
+			}
 			htmlRow += "<td>" + colCell + "</td>"
 		}
 

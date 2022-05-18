@@ -37,7 +37,7 @@ func (r *ticketRepositoryMemory) GetTicketsByEmailAddress(_ context.Context, use
 	var list ticket.List
 
 	// first will be Incidents, then Requests
-	sort.Slice(r.tickets, func(i, j int) bool {
+	sort.SliceStable(r.tickets, func(i, j int) bool {
 		return r.tickets[i].TicketType < r.tickets[j].TicketType
 	})
 
@@ -57,12 +57,12 @@ func (r *ticketRepositoryMemory) GetTicketsByChannelID(_ context.Context, channe
 	var list ticket.List
 
 	// sort by ticket type - first will be Incidents, then Requests
-	sort.Slice(r.tickets, func(i, j int) bool {
+	sort.SliceStable(r.tickets, func(i, j int) bool {
 		return r.tickets[i].TicketType < r.tickets[j].TicketType
 	})
 
 	// sort (i.e. group) by email addresses
-	sort.Slice(r.tickets, func(i, j int) bool {
+	sort.SliceStable(r.tickets, func(i, j int) bool {
 		return r.tickets[i].UserEmail < r.tickets[j].UserEmail
 	})
 
@@ -83,6 +83,9 @@ func (r *ticketRepositoryMemory) GetDistinctEmailAddresses(_ context.Context) ([
 	emailsMap := make(map[string]bool)
 
 	for _, t := range r.tickets {
+		if t.UserEmail == "" { // skip empty emails, i.e. not assigned tickets
+			continue
+		}
 		_, found := emailsMap[t.UserEmail]
 		if found {
 			continue
@@ -94,6 +97,8 @@ func (r *ticketRepositoryMemory) GetDistinctEmailAddresses(_ context.Context) ([
 		emails = append(emails, email)
 	}
 
+	sort.Strings(emails)
+
 	return emails, nil
 }
 
@@ -103,6 +108,11 @@ func (r *ticketRepositoryMemory) GetDistinctChannelIDs(_ context.Context) ([]str
 
 	var channelIDs []string
 	channelsMap := make(map[string]bool)
+
+	// sort by channel name
+	sort.SliceStable(r.tickets, func(i, j int) bool {
+		return r.tickets[i].ChannelName < r.tickets[j].ChannelName
+	})
 
 	for _, t := range r.tickets {
 		_, found := channelsMap[t.ChannelID]

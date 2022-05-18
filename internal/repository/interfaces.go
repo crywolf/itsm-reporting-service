@@ -53,8 +53,8 @@ type UserRepository interface {
 	// AddUserList adds list of users to the repository
 	AddUserList(ctx context.Context, userList user.List) error
 
-	// GetUsersByChannel returns users in the specified channel from the repository
-	GetUsersByChannel(ctx context.Context, channelID string) (user.List, error)
+	// GetUserInChannel returns user from specified channel from the repository
+	GetUserInChannel(ctx context.Context, channelID, userID string) (user.User, error)
 
 	// Truncate removes all items from repository
 	Truncate(ctx context.Context) error

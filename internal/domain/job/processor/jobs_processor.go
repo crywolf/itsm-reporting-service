@@ -102,50 +102,49 @@ func (p *processor) WaitForJobs() {
 				continue
 			}
 			p.logger.Infow("New job read from the queue", "time", time.Now().Format(time.RFC3339), "id", j.UUID())
-			//TODO
-			/*
-				if err := p.userDownloader.Reset(ctx); err != nil {
-					p.logger.Errorw("User downloader reset failed", "error", err)
-					p.markJobAsFailed(ctx, j.UUID(), err)
-					p.markAsReady()
-					continue
-				}
 
-				if err := p.ticketDownloader.Reset(ctx); err != nil {
-					p.logger.Errorw("Ticket downloader reset failed", "error", err)
-					p.markJobAsFailed(ctx, j.UUID(), err)
-					p.markAsReady()
-					continue
-				}
+			if err := p.userDownloader.Reset(ctx); err != nil {
+				p.logger.Errorw("User downloader reset failed", "error", err)
+				p.markJobAsFailed(ctx, j.UUID(), err)
+				p.markAsReady()
+				continue
+			}
 
-				if err := p.downloadChannelList(ctx, j.UUID()); err != nil {
-					p.logger.Errorw("Channels download failed", "error", err)
-					p.markJobAsFailed(ctx, j.UUID(), err)
-					p.markAsReady()
-					continue
-				}
+			if err := p.ticketDownloader.Reset(ctx); err != nil {
+				p.logger.Errorw("Ticket downloader reset failed", "error", err)
+				p.markJobAsFailed(ctx, j.UUID(), err)
+				p.markAsReady()
+				continue
+			}
 
-				if err := p.downloadUsersFromChannels(ctx, j.UUID()); err != nil {
-					p.logger.Errorw("Users download failed", "error", err)
-					p.markJobAsFailed(ctx, j.UUID(), err)
-					p.markAsReady()
-					continue
-				}
+			if err := p.downloadChannelList(ctx, j.UUID()); err != nil {
+				p.logger.Errorw("Channels download failed", "error", err)
+				p.markJobAsFailed(ctx, j.UUID(), err)
+				p.markAsReady()
+				continue
+			}
 
-				if err := p.downloadTicketsFromChannels(ctx, j.UUID()); err != nil {
-					p.logger.Errorw("Tickets download failed", "error", err)
-					p.markJobAsFailed(ctx, j.UUID(), err)
-					p.markAsReady()
-					continue
-				}
+			if err := p.downloadUsersFromChannels(ctx, j.UUID()); err != nil {
+				p.logger.Errorw("Users download failed", "error", err)
+				p.markJobAsFailed(ctx, j.UUID(), err)
+				p.markAsReady()
+				continue
+			}
 
-				if err := p.generateExcelFiles(ctx, j.UUID()); err != nil {
-					p.logger.Errorw("Excel files generation failed", "error", err)
-					p.markJobAsFailed(ctx, j.UUID(), err)
-					p.markAsReady()
-					continue
-				}
-			*/
+			if err := p.downloadTicketsFromChannels(ctx, j.UUID()); err != nil {
+				p.logger.Errorw("Tickets download failed", "error", err)
+				p.markJobAsFailed(ctx, j.UUID(), err)
+				p.markAsReady()
+				continue
+			}
+
+			if err := p.generateExcelFiles(ctx, j.UUID()); err != nil {
+				p.logger.Errorw("Excel files generation failed", "error", err)
+				p.markJobAsFailed(ctx, j.UUID(), err)
+				p.markAsReady()
+				continue
+			}
+
 			if err := p.sendEmails(ctx, j.UUID()); err != nil {
 				p.logger.Errorw("Emails sending failed", "error", err)
 				p.markJobAsFailed(ctx, j.UUID(), err)

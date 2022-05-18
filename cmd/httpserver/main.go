@@ -71,7 +71,7 @@ func main() {
 
 	userRepository := memory.NewUserRepositoryMemory()
 	userClient := userdownloader.NewUserClient(client.NewHTTPClient(config.UserEndpointPath, logger, tokenSvcClient))
-	userDownloader := userdownloader.NewUserDownloader(channelRepository, userRepository, userClient)
+	userDownloader := userdownloader.NewUserDownloader(logger, channelRepository, userRepository, userClient)
 
 	ticketRepository := memory.NewTicketRepositoryMemory()
 	ticketClient := ticketdownloader.NewTicketClient(
