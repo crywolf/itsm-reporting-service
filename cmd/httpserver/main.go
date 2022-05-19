@@ -58,11 +58,14 @@ func main() {
 	}
 	jobService := jobsvc.NewJobService(jobRepository)
 
-	tokenSvcClient := client.NewTokenSvcClient(client.Config{
+	tokenSvcClient, err := client.NewTokenSvcClient(client.Config{
 		AssertionToken:         config.AssertionToken,
 		AssertionTokenEndpoint: config.AssertionTokenEndpoint,
 		AssertionTokenOrg:      config.AssertionTokenOrg,
 	})
+	if err != nil {
+		logger.Fatalw("Error creating tokenSvcClient", "error", err)
+	}
 
 	channelRepository := memory.NewChannelRepositoryMemory()
 	channelClient := chandownloader.NewChannelClient(client.NewHTTPClient(config.ChannelEndpointPath, logger, tokenSvcClient))
