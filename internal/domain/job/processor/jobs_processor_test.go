@@ -283,8 +283,8 @@ func Test_processor_DataProcessing(t *testing.T) {
 	channelClient.On("GetChannels").Return(channelList, nil).Once()
 
 	userClient := new(mocks.UserClientMock)
-	userClient.On("GetEngineers", ch1).Return(userListChan1, nil).Once()
-	userClient.On("GetEngineers", ch2).Return(userListChan2, nil).Once()
+	userClient.On("GetUsers", ch1).Return(userListChan1, nil).Once()
+	userClient.On("GetUsers", ch2).Return(userListChan2, nil).Once()
 
 	ticketClient := new(mocks.TicketClientMock)
 	ticketClient.On("GetIncidents", ch1).Return(incListCh1, nil).Once()

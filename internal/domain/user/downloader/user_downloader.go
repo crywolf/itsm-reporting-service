@@ -47,7 +47,7 @@ func (d *userDownloader) DownloadUsers(ctx context.Context) error {
 	for _, channel := range channels {
 		d.logger.Infow("Downloading users from the channel", "channel", channel.Name)
 
-		userList, err := d.client.GetEngineers(ctx, channel)
+		userList, err := d.client.GetUsers(ctx, channel)
 		if err != nil {
 			return err
 		}

@@ -99,11 +99,6 @@ func (c *ticketClient) Close() error {
 func (c ticketClient) preparePayload(bookmark string) string {
 	// Download only "open" tickets
 	// state_id: 4 = Resolved, 5 = Closed, 6 = Cancelled
-
-	// TODO + remove
-	//return `{"selector":{"$and":[{"state_id":{"$ne":4}},{"state_id":{"$ne":5}},{"state_id":{"$ne":6}}],"assigned_to":"` +
-	//	user.UserID + `"},"fields":["uuid","number","short_description","state_id","location","location_custom"],"bookmark":"` + bookmark + `"}`
-
 	return `{"selector":{"$and":[{"state_id":{"$ne":4}},{"state_id":{"$ne":5}},{"state_id":{"$ne":6}}]},` +
 		`"fields":["uuid","number","assigned_to","short_description","state_id","location","location_custom", "created_at"],"bookmark":"` + bookmark + `"}`
 }

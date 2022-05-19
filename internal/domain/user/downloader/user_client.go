@@ -11,10 +11,10 @@ import (
 	"github.com/KompiTech/itsm-reporting-service/internal/domain/user"
 )
 
-// UserClient gets user list from external service
+// UserClient gets list of users from external service
 type UserClient interface {
-	// GetEngineers gets engineers from external service
-	GetEngineers(ctx context.Context, channel channel.Channel) (user.List, error)
+	// GetUsers gets users from external service
+	GetUsers(ctx context.Context, channel channel.Channel) (user.List, error)
 
 	// Close closes client connections
 	Close() error
@@ -30,8 +30,7 @@ type userClient struct {
 	client.Client
 }
 
-// TODO rename to getUsers()
-func (c userClient) GetEngineers(ctx context.Context, channel channel.Channel) (user.List, error) {
+func (c userClient) GetUsers(ctx context.Context, channel channel.Channel) (user.List, error) {
 	var userList user.List
 	var bookmark string
 

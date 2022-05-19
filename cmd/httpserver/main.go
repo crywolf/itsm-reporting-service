@@ -5,7 +5,6 @@ import (
 	"net/http"
 	"os"
 	"os/signal"
-	"strings"
 	"syscall"
 	"time"
 
@@ -80,8 +79,7 @@ func main() {
 	)
 	ticketDownloader := ticketdownloader.NewTicketDownloader(logger, channelRepository, userRepository, ticketRepository, ticketClient)
 
-	sdAgentEmails := strings.Split(config.SDAgentEmails, ",")
-	excelGen := excel.NewExcelGenerator(logger, ticketRepository, sdAgentEmails)
+	excelGen := excel.NewExcelGenerator(logger, ticketRepository, config.SDAgentEmails)
 
 	emailSender := email.NewEmailSender(
 		logger,
@@ -92,7 +90,7 @@ func main() {
 		excelGen.FEDirPath(),
 		excelGen.SDDirPath(),
 		ticketRepository,
-		sdAgentEmails,
+		config.SDAgentEmails,
 	)
 
 	jobProcessor := jobprocessor.NewJobProcessor(

@@ -29,6 +29,7 @@ type Data struct {
 	CreatedAt        string
 }
 
+// StateName converts state ID to its name
 func (d Data) StateName() string {
 	states := [...]string{
 		"New",         // 0
@@ -47,6 +48,7 @@ func (d Data) StateName() string {
 	return states[d.StateID]
 }
 
+// CreatedAtDate returns date of the ticket creation
 func (d Data) CreatedAtDate() string {
 	datetime, err := time.Parse(time.RFC3339, d.CreatedAt)
 	if err != nil {

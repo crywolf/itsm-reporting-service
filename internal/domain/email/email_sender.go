@@ -143,13 +143,14 @@ func (s sender) sendEmails(ctx context.Context, addresses []string, caption, sub
 	return err
 }
 
-func (s sender) prepareEmails(addresses []string, caption, subject, attachmentsDir string) ([]Email, error) {
+func (s sender) prepareEmails(addresses []string, caption, emailSubject, attachmentsDir string) ([]Email, error) {
 	var emails []Email
+	subject := emailSubject
 
 	for _, address := range addresses {
 		fileName := address + ".xlsx"
 
-		if subject == "" {
+		if emailSubject == "" {
 			subject = fmt.Sprintf("Open tickets assigned to %s", address)
 		}
 

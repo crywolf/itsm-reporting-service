@@ -9,11 +9,12 @@ require (
 	github.com/google/go-cmp v0.5.7 // indirect
 	github.com/google/uuid v1.3.0
 	github.com/julienschmidt/httprouter v1.3.0
-	github.com/lib/pq v1.10.5
-	github.com/prometheus/client_golang v1.12.1
+	github.com/lib/pq v1.10.6
+	github.com/prometheus/client_golang v1.12.2
 	github.com/stretchr/testify v1.7.1
 	github.com/xuri/excelize/v2 v2.6.0
 	go.uber.org/zap v1.21.0
 	golang.org/x/crypto v0.0.0-20220411220226-7b82a4e95df4 // indirect
 	golang.org/x/net v0.0.0-20220412020605-290c469a71a5 // indirect
+	gopkg.in/square/go-jose.v2 v2.6.0
 )
