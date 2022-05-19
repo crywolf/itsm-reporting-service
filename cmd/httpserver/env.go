@@ -4,6 +4,7 @@ import (
 	"fmt"
 	"os"
 	"strconv"
+	"strings"
 )
 
 // Config contains all the configuration variables
@@ -28,6 +29,9 @@ type Config struct {
 
 	// SQL database connection URL string
 	DBConnectionString string
+
+	// list of email addresses of SD agents
+	SDAgentEmails []string
 
 	// ITSM server address, for example "http://localhost:8081"
 	ITSMServerURI string
@@ -103,6 +107,12 @@ func loadEnvConfig() (*Config, error) {
 	// SQL database config
 	if c.DBConnectionString, ok = os.LookupEnv("DB_CONNECTION_STRING"); !ok {
 		return c, fmt.Errorf("env var %s not set", "DB_CONNECTION_STRING")
+	}
+
+	// email addresses of SD agents, separated by comma (one@test.com,two@test.com)
+	SDAgentEmails := os.Getenv("SD_AGENT_EMAILS")
+	if SDAgentEmails != "" {
+		c.SDAgentEmails = strings.Split(SDAgentEmails, ",")
 	}
 
 	// ITSM server address, for example "http://localhost:8081"

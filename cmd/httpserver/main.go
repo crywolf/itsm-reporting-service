@@ -58,11 +58,14 @@ func main() {
 	}
 	jobService := jobsvc.NewJobService(jobRepository)
 
-	tokenSvcClient := client.NewTokenSvcClient(client.Config{
+	tokenSvcClient, err := client.NewTokenSvcClient(client.Config{
 		AssertionToken:         config.AssertionToken,
 		AssertionTokenEndpoint: config.AssertionTokenEndpoint,
 		AssertionTokenOrg:      config.AssertionTokenOrg,
 	})
+	if err != nil {
+		logger.Fatalw("Error creating tokenSvcClient", "error", err)
+	}
 
 	channelRepository := memory.NewChannelRepositoryMemory()
 	channelClient := chandownloader.NewChannelClient(client.NewHTTPClient(config.ChannelEndpointPath, logger, tokenSvcClient))
@@ -70,7 +73,7 @@ func main() {
 
 	userRepository := memory.NewUserRepositoryMemory()
 	userClient := userdownloader.NewUserClient(client.NewHTTPClient(config.UserEndpointPath, logger, tokenSvcClient))
-	userDownloader := userdownloader.NewUserDownloader(channelRepository, userRepository, userClient)
+	userDownloader := userdownloader.NewUserDownloader(logger, channelRepository, userRepository, userClient)
 
 	ticketRepository := memory.NewTicketRepositoryMemory()
 	ticketClient := ticketdownloader.NewTicketClient(
@@ -79,7 +82,7 @@ func main() {
 	)
 	ticketDownloader := ticketdownloader.NewTicketDownloader(logger, channelRepository, userRepository, ticketRepository, ticketClient)
 
-	excelGen := excel.NewExcelGenerator(logger, ticketRepository)
+	excelGen := excel.NewExcelGenerator(logger, ticketRepository, config.SDAgentEmails)
 
 	emailSender := email.NewEmailSender(
 		logger,
@@ -87,8 +90,10 @@ func main() {
 		config.PostmarkServerToken,
 		config.PostmarkMessageStream,
 		config.FromEmailAddress,
-		excelGen.DirName(),
+		excelGen.FEDirPath(),
+		excelGen.SDDirPath(),
 		ticketRepository,
+		config.SDAgentEmails,
 	)
 
 	jobProcessor := jobprocessor.NewJobProcessor(

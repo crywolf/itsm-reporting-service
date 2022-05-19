@@ -4,6 +4,7 @@ import (
 	"context"
 
 	"github.com/KompiTech/itsm-reporting-service/internal/repository"
+	"go.uber.org/zap"
 )
 
 // UserDownloader downloads list of users from the ITSM service
@@ -18,8 +19,12 @@ type UserDownloader interface {
 	Close() error
 }
 
-func NewUserDownloader(channelRepository repository.ChannelRepository, userRepository repository.UserRepository, client UserClient) UserDownloader {
+func NewUserDownloader(
+	logger *zap.SugaredLogger, channelRepository repository.ChannelRepository,
+	userRepository repository.UserRepository, client UserClient,
+) UserDownloader {
 	return &userDownloader{
+		logger:            logger,
 		client:            client,
 		channelRepository: channelRepository,
 		userRepository:    userRepository,
@@ -27,6 +32,7 @@ func NewUserDownloader(channelRepository repository.ChannelRepository, userRepos
 }
 
 type userDownloader struct {
+	logger            *zap.SugaredLogger
 	client            UserClient
 	channelRepository repository.ChannelRepository
 	userRepository    repository.UserRepository
@@ -39,7 +45,9 @@ func (d *userDownloader) DownloadUsers(ctx context.Context) error {
 	}
 
 	for _, channel := range channels {
-		userList, err := d.client.GetEngineers(ctx, channel)
+		d.logger.Infow("Downloading users from the channel", "channel", channel.Name)
+
+		userList, err := d.client.GetUsers(ctx, channel)
 		if err != nil {
 			return err
 		}
@@ -47,6 +55,8 @@ func (d *userDownloader) DownloadUsers(ctx context.Context) error {
 		if err := d.userRepository.AddUserList(ctx, userList); err != nil {
 			return err
 		}
+
+		d.logger.Infow("Users from the channel successfully downloaded", "channel", channel.Name, "users found", len(userList))
 	}
 
 	return nil

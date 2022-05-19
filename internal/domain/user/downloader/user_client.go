@@ -11,10 +11,10 @@ import (
 	"github.com/KompiTech/itsm-reporting-service/internal/domain/user"
 )
 
-// UserClient gets user list from external service
+// UserClient gets list of users from external service
 type UserClient interface {
-	// GetEngineers gets engineers from external service
-	GetEngineers(ctx context.Context, channel channel.Channel) (user.List, error)
+	// GetUsers gets users from external service
+	GetUsers(ctx context.Context, channel channel.Channel) (user.List, error)
 
 	// Close closes client connections
 	Close() error
@@ -30,12 +30,12 @@ type userClient struct {
 	client.Client
 }
 
-func (c userClient) GetEngineers(ctx context.Context, channel channel.Channel) (user.List, error) {
+func (c userClient) GetUsers(ctx context.Context, channel channel.Channel) (user.List, error) {
 	var userList user.List
 	var bookmark string
 
 	for {
-		payload := `{"fields":["uuid","full_name","email","type"],"bookmark":"` + bookmark + `"}`
+		payload := `{"fields":["uuid","full_name","email","type","org_display_name"],"bookmark":"` + bookmark + `"}`
 		body := strings.NewReader(payload)
 		resp, err := c.Query(ctx, channel.ChannelID, body)
 		if err != nil {
@@ -45,10 +45,11 @@ func (c userClient) GetEngineers(ctx context.Context, channel channel.Channel) (
 		type OKPayload struct {
 			Bookmark string `json:"bookmark"`
 			Result   []struct {
-				ID    string `json:"uuid"`
-				Name  string `json:"full_name"`
-				Email string `json:"email"`
-				Type  string `json:"type"`
+				ID      string `json:"uuid"`
+				Name    string `json:"full_name"`
+				Email   string `json:"email"`
+				Type    string `json:"type"`
+				OrgName string `json:"org_display_name"`
 			} `json:"result"`
 		}
 		var okPayload OKPayload
@@ -71,6 +72,8 @@ func (c userClient) GetEngineers(ctx context.Context, channel channel.Channel) (
 				UserID:    v.ID,
 				Email:     v.Email,
 				Name:      v.Name,
+				Type:      v.Type,
+				OrgName:   v.OrgName,
 			},
 			)
 		}

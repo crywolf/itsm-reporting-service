@@ -19,30 +19,35 @@ type Config struct {
 }
 
 type tokenSvcClient struct {
-	config Config
+	config         Config
+	tokenRefresher *tokget.Refresher
 }
 
-func NewTokenSvcClient(config Config) TokenSvcClient {
-	return &tokenSvcClient{
+func NewTokenSvcClient(config Config) (TokenSvcClient, error) {
+	var err error
+	reqTimeout := 15 * time.Second
+
+	c := &tokenSvcClient{
 		config: config,
 	}
-}
 
-func (c *tokenSvcClient) GetToken() (string, error) {
-	timeout := 5 * time.Second
-	refresher, err := tokget.NewRefresherFromReader(
+	c.tokenRefresher, err = tokget.NewRefresherFromReader(
 		strings.NewReader(c.config.AssertionToken),
-		c.config.AssertionTokenEndpoint,
+		config.AssertionTokenEndpoint,
 		false,
-		timeout,
-		map[string]interface{}{"org": c.config.AssertionTokenOrg},
+		reqTimeout,
+		map[string]interface{}{"org": config.AssertionTokenOrg},
 		300,
 	)
 	if err != nil {
-		return "", err
+		return c, err
 	}
 
-	token, err := refresher.Token()
+	return c, nil
+}
+
+func (c *tokenSvcClient) GetToken() (string, error) {
+	token, err := c.tokenRefresher.Token()
 	if err != nil {
 		return "", err
 	}

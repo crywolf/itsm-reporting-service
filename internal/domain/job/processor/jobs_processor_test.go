@@ -51,9 +51,14 @@ func Test_processor_ProcessNewJob(t *testing.T) {
 		ticketDownloader.On("DownloadTickets").Return(nil).Once()
 
 		excelGen := new(mocks.ExcelGeneratorMock)
+		excelGen.On("GenerateExcelFilesForFieldEngineers").Return(nil).Once()
+		excelGen.On("GenerateExcelFilesForServiceDesk").Return(nil).Once()
 
 		emailSender := new(mocks.EmailSenderMock)
-		emailSender.On("SendEmails").Return(nil).Once()
+		emailSender.On("SendEmailsForFieldEngineers").Return(nil).Once()
+		emailSender.Wg.Add(1)
+
+		emailSender.On("SendEmailsForServiceDesk").Return(nil).Once()
 		emailSender.Wg.Add(1)
 
 		jp := NewJobProcessor(logger, jobsRepo, channelDownloader, userDownloader, ticketDownloader, excelGen, emailSender)
@@ -74,6 +79,7 @@ func Test_processor_ProcessNewJob(t *testing.T) {
 		channelDownloader.AssertExpectations(t)
 		userDownloader.AssertExpectations(t)
 		ticketDownloader.AssertExpectations(t)
+		excelGen.AssertExpectations(t)
 		emailSender.AssertExpectations(t)
 	})
 
@@ -96,9 +102,14 @@ func Test_processor_ProcessNewJob(t *testing.T) {
 		ticketDownloader.On("DownloadTickets").Return(nil).Twice()
 
 		excelGen := new(mocks.ExcelGeneratorMock)
+		excelGen.On("GenerateExcelFilesForFieldEngineers").Return(nil).Twice()
+		excelGen.On("GenerateExcelFilesForServiceDesk").Return(nil).Twice()
 
 		emailSender := new(mocks.EmailSenderMock)
-		emailSender.On("SendEmails").Return(nil).Twice()
+		emailSender.On("SendEmailsForFieldEngineers").Return(nil).Twice()
+		emailSender.Wg.Add(2)
+
+		emailSender.On("SendEmailsForServiceDesk").Return(nil).Twice()
 		emailSender.Wg.Add(2)
 
 		jp := NewJobProcessor(
@@ -125,6 +136,7 @@ func Test_processor_ProcessNewJob(t *testing.T) {
 		channelDownloader.AssertExpectations(t)
 		userDownloader.AssertExpectations(t)
 		ticketDownloader.AssertExpectations(t)
+		excelGen.AssertExpectations(t)
 		emailSender.AssertExpectations(t)
 	})
 }
@@ -162,11 +174,17 @@ func Test_processor_DataProcessing(t *testing.T) {
 		ChannelID: ch1.ChannelID,
 		UserID:    "c8d1b9fb-35f1-46cb-aa37-a16b96937734",
 		Email:     email1,
+		Name:      "Alfons",
+		Type:      "engineer",
+		OrgName:   "KompiTech",
 	}
 	u2 := user.User{
 		ChannelID: ch1.ChannelID,
 		UserID:    "b599fdbe-09df-47f9-9b08-c08caccab3b1",
 		Email:     email2,
+		Name:      "Bill",
+		Type:      "",
+		OrgName:   "ABC",
 	}
 	userListChan1 := user.List{u1, u2}
 
@@ -174,11 +192,16 @@ func Test_processor_DataProcessing(t *testing.T) {
 		ChannelID: ch2.ChannelID,
 		UserID:    "b599fdbe-09df-47f9-9b08-c08caccab3b1",
 		Email:     email2,
+		Name:      "Bill 2",
+		Type:      "xxx",
+		OrgName:   "ABC",
 	}
 	userListChan2 := user.List{u3}
 
 	inc1 := ticket.Ticket{
-		UserEmail:   u1.Email,
+		UserID:      u1.UserID,
+		UserOrgName: u1.OrgName,
+		ChannelID:   ch1.ChannelID,
 		ChannelName: ch1.Name,
 		TicketType:  "INCIDENT",
 		TicketData: ticket.Data{
@@ -189,7 +212,8 @@ func Test_processor_DataProcessing(t *testing.T) {
 		},
 	}
 	inc2 := ticket.Ticket{
-		UserEmail:   u1.Email,
+		UserID:      u1.UserID,
+		ChannelID:   ch1.ChannelID,
 		ChannelName: ch1.Name,
 		TicketType:  "INCIDENT",
 		TicketData: ticket.Data{
@@ -200,7 +224,8 @@ func Test_processor_DataProcessing(t *testing.T) {
 		},
 	}
 	inc3 := ticket.Ticket{
-		UserEmail:   u1.Email,
+		UserID:      u1.UserID,
+		ChannelID:   ch1.ChannelID,
 		ChannelName: ch1.Name,
 		TicketType:  "INCIDENT",
 		TicketData: ticket.Data{
@@ -210,10 +235,10 @@ func Test_processor_DataProcessing(t *testing.T) {
 			Location:         "Nid Nuland Netherlands  Nulandsestraat, 2",
 		},
 	}
-	incidentListU1Ch1 := ticket.List{inc1, inc2, inc3}
 
 	inc4 := ticket.Ticket{
-		UserEmail:   u3.Email,
+		UserID:      u3.UserID,
+		ChannelID:   ch2.ChannelID,
 		ChannelName: ch2.Name,
 		TicketType:  "INCIDENT",
 		TicketData: ticket.Data{
@@ -223,10 +248,10 @@ func Test_processor_DataProcessing(t *testing.T) {
 			Location:         "Sp Teruel Spain  Poligono 25, 66",
 		},
 	}
-	incidentListU2Ch3 := ticket.List{inc4}
 
 	req1 := ticket.Ticket{
-		UserEmail:   u1.Email,
+		UserID:      u1.UserID,
+		ChannelID:   ch1.ChannelID,
 		ChannelName: ch1.Name,
 		TicketType:  "K_REQUEST",
 		TicketData: ticket.Data{
@@ -236,10 +261,10 @@ func Test_processor_DataProcessing(t *testing.T) {
 			Location:         "Au Schaldorf Austria  Neubaugasse, 13",
 		},
 	}
-	requestListU1Ch1 := ticket.List{req1}
 
 	req2 := ticket.Ticket{
-		UserEmail:   u2.Email,
+		UserID:      u2.UserID,
+		ChannelID:   ch1.ChannelID,
 		ChannelName: ch1.Name,
 		TicketType:  "K_REQUEST",
 		TicketData: ticket.Data{
@@ -249,36 +274,41 @@ func Test_processor_DataProcessing(t *testing.T) {
 			Location:         "Cor Corbie France  Route de Bray",
 		},
 	}
-	requestListU2Ch1 := ticket.List{req2}
+
+	incListCh1 := ticket.List{inc1, inc2, inc3}
+	reqListCh1 := ticket.List{req1, req2}
+	incListCh2 := ticket.List{inc4}
 
 	channelClient := new(mocks.ChannelClientMock)
 	channelClient.On("GetChannels").Return(channelList, nil).Once()
 
 	userClient := new(mocks.UserClientMock)
-	userClient.On("GetEngineers", ch1).Return(userListChan1, nil).Once()
-	userClient.On("GetEngineers", ch2).Return(userListChan2, nil).Once()
+	userClient.On("GetUsers", ch1).Return(userListChan1, nil).Once()
+	userClient.On("GetUsers", ch2).Return(userListChan2, nil).Once()
 
 	ticketClient := new(mocks.TicketClientMock)
-	ticketClient.On("GetIncidents", ch1, u1).Return(incidentListU1Ch1, nil).Once()
-	ticketClient.On("GetIncidents", ch1, u2).Return(ticket.List{}, nil).Once()
-	ticketClient.On("GetIncidents", ch2, u3).Return(incidentListU2Ch3, nil).Once()
+	ticketClient.On("GetIncidents", ch1).Return(incListCh1, nil).Once()
+	ticketClient.On("GetIncidents", ch2).Return(incListCh2, nil).Once()
 
-	ticketClient.On("GetRequests", ch1, u1).Return(requestListU1Ch1, nil).Once()
-	ticketClient.On("GetRequests", ch1, u2).Return(requestListU2Ch1, nil).Once()
-	ticketClient.On("GetRequests", ch2, u3).Return(ticket.List{}, nil).Once()
-	ticketClient.Wg.Add(6)
+	ticketClient.On("GetRequests", ch1).Return(reqListCh1, nil).Once()
+	ticketClient.On("GetRequests", ch2).Return(ticket.List{}, nil).Once()
+	ticketClient.Wg.Add(4)
 
 	channelRepository := memory.NewChannelRepositoryMemory()
 	channelDownloader := chandownloader.NewChannelDownloader(channelRepository, channelClient)
 	userRepository := memory.NewUserRepositoryMemory()
-	userDownloader := userdownloader.NewUserDownloader(channelRepository, userRepository, userClient)
+	userDownloader := userdownloader.NewUserDownloader(logger, channelRepository, userRepository, userClient)
 	ticketRepository := memory.NewTicketRepositoryMemory()
 	ticketDownloader := ticketdownloader.NewTicketDownloader(logger, channelRepository, userRepository, ticketRepository, ticketClient)
 
-	excelGen := excel.NewExcelGenerator(logger, ticketRepository)
+	sdAgentEmails := []string{"firstSDAgent@email.test", "secondSDAgent@email.test", "thirdSDAgent@email.test"}
+	excelGen := excel.NewExcelGenerator(logger, ticketRepository, sdAgentEmails)
 
 	emailSender := new(mocks.EmailSenderMock)
-	emailSender.On("SendEmails").Return(nil)
+	emailSender.On("SendEmailsForFieldEngineers").Return(nil)
+	emailSender.Wg.Add(1)
+
+	emailSender.On("SendEmailsForServiceDesk").Return(nil)
 	emailSender.Wg.Add(1)
 
 	jp := NewJobProcessor(
@@ -301,38 +331,47 @@ func Test_processor_DataProcessing(t *testing.T) {
 
 	ctx := context.Background()
 
-	expectedUserListCh1, err := userRepository.GetUsersByChannel(ctx, ch1.ChannelID)
+	expectedTicketListU1, err := ticketRepository.GetTicketsByEmailAddress(ctx, email1)
 	require.NoError(t, err)
 
-	expectedUserListCh2, err := userRepository.GetUsersByChannel(ctx, ch2.ChannelID)
-	require.NoError(t, err)
-
-	assert.Len(t, expectedUserListCh1, len(userListChan1), "len of users in channel 1")
-	assert.Len(t, expectedUserListCh2, len(userListChan2), "len of users in channel 2")
-
-	expectedTicketListU1, err := ticketRepository.GetTicketsByEmail(ctx, email1)
-	require.NoError(t, err)
-
-	assert.Len(t, expectedTicketListU1, 4, "len of tickets for email 1 = user 1")
+	assert.Len(t, expectedTicketListU1, 4, "len of tickets for email 1 = tickets for user 1")
 	for _, tckt := range expectedTicketListU1 {
 		assert.Equal(t, tckt.UserEmail, email1)
+		assert.Equal(t, tckt.UserID, u1.UserID)
+		assert.Equal(t, tckt.UserName, u1.Name)
+		assert.Equal(t, tckt.UserOrgName, u1.OrgName)
 	}
 
-	expectedTicketListU2, err := ticketRepository.GetTicketsByEmail(ctx, email2)
+	expectedTicketListU2, err := ticketRepository.GetTicketsByEmailAddress(ctx, email2)
 	require.NoError(t, err)
 
-	assert.Len(t, expectedTicketListU2, 2, "len of tickets for email 2 = user2 + user3")
-	for _, tckt := range expectedTicketListU2 {
-		assert.Equal(t, tckt.UserEmail, email2)
-	}
+	assert.Len(t, expectedTicketListU2, 2, "len of tickets for email 2 = tickets for user2 + user3")
+
+	assert.Equal(t, email2, expectedTicketListU2[0].UserEmail)
+	assert.Equal(t, u3.Name, expectedTicketListU2[0].UserName)
+	assert.Equal(t, u3.OrgName, expectedTicketListU2[0].UserOrgName)
+
+	assert.Equal(t, email2, expectedTicketListU2[1].UserEmail)
+	assert.Equal(t, u2.Name, expectedTicketListU2[1].UserName)
+	assert.Equal(t, u2.OrgName, expectedTicketListU2[1].UserOrgName)
 
 	// check generated Excel files
-	files, err := os.ReadDir(excelGen.DirName())
+	// 1) files for field engineers
+	filesFE, err := os.ReadDir(excelGen.FEDirPath())
 	require.NoError(t, err)
 
-	assert.Len(t, files, 2, "Excel files count == email addresses count")
-	assert.Equal(t, files[0].Name(), email1+".xlsx")
-	assert.Equal(t, files[1].Name(), email2+".xlsx")
+	assert.Len(t, filesFE, 2, "Excel files count for FE == email addresses count")
+	assert.Equal(t, filesFE[0].Name(), email1+".xlsx")
+	assert.Equal(t, filesFE[1].Name(), email2+".xlsx")
+
+	// 2) files for service desk
+	filesSD, err := os.ReadDir(excelGen.SDDirPath())
+	require.NoError(t, err)
+
+	assert.Len(t, filesSD, 3, "Excel files count for SD == email addresses count")
+	assert.Equal(t, filesSD[0].Name(), sdAgentEmails[0]+".xlsx")
+	assert.Equal(t, filesSD[1].Name(), sdAgentEmails[1]+".xlsx")
+	assert.Equal(t, filesSD[2].Name(), sdAgentEmails[2]+".xlsx")
 
 	jobsRepo.AssertExpectations(t)
 	channelClient.AssertExpectations(t)

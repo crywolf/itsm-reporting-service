@@ -53,8 +53,8 @@ type UserRepository interface {
 	// AddUserList adds list of users to the repository
 	AddUserList(ctx context.Context, userList user.List) error
 
-	// GetUsersByChannel returns users in the specified channel from the repository
-	GetUsersByChannel(ctx context.Context, channelID string) (user.List, error)
+	// GetUserInChannel returns user from specified channel from the repository
+	GetUserInChannel(ctx context.Context, channelID, userID string) (user.User, error)
 
 	// Truncate removes all items from repository
 	Truncate(ctx context.Context) error
@@ -65,12 +65,19 @@ type TicketRepository interface {
 	// AddTicketList adds list of tickets to the repository
 	AddTicketList(ctx context.Context, ticketList ticket.List) error
 
-	// GetTicketsByEmail returns tickets for the specified user's email from the repository. It sorts the returned list,
-	// first are Incidents, then Requests
-	GetTicketsByEmail(ctx context.Context, userEmail string) (ticket.List, error)
+	// GetTicketsByEmailAddress returns tickets for the specified user's email address from the repository.
+	// It sorts the returned list, first are Incidents, then Requests.
+	GetTicketsByEmailAddress(ctx context.Context, userEmail string) (ticket.List, error)
 
-	// GetDistinctEmails returns distinct email addresses from the repository
-	GetDistinctEmails(ctx context.Context) ([]string, error)
+	// GetTicketsByChannelID returns tickets for the specified channel from the repository.
+	// It groups the returned list by user email address and sorts it, first are Incidents, then Requests.
+	GetTicketsByChannelID(ctx context.Context, channelID string) (ticket.List, error)
+
+	// GetDistinctEmailAddresses returns distinct email addresses from the repository
+	GetDistinctEmailAddresses(ctx context.Context) ([]string, error)
+
+	// GetDistinctChannelIDs returns distinct channel IDs from the repository
+	GetDistinctChannelIDs(ctx context.Context) ([]string, error)
 
 	// Truncate removes all items from the repository
 	Truncate(ctx context.Context) error

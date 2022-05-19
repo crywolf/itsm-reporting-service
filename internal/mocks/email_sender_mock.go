@@ -13,7 +13,13 @@ type EmailSenderMock struct {
 	Wg sync.WaitGroup
 }
 
-func (m *EmailSenderMock) SendEmails(_ context.Context) error {
+func (m *EmailSenderMock) SendEmailsForFieldEngineers(_ context.Context) error {
+	defer m.Wg.Done()
+	args := m.Called()
+	return args.Error(0)
+}
+
+func (m *EmailSenderMock) SendEmailsForServiceDesk(_ context.Context) error {
 	defer m.Wg.Done()
 	args := m.Called()
 	return args.Error(0)

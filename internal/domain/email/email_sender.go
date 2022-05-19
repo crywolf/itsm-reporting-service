@@ -20,43 +20,71 @@ import (
 )
 
 type Sender interface {
-	// SendEmails sends emails with tickets' info
-	SendEmails(ctx context.Context) error
+	// SendEmailsForFieldEngineers sends emails with tickets' info to field engineers
+	SendEmailsForFieldEngineers(ctx context.Context) error
+
+	// SendEmailsForServiceDesk sends emails with tickets' info to service desk agents
+	SendEmailsForServiceDesk(ctx context.Context) error
 }
 
 //go:embed email_template.html
 var templateHTML string
 
+// NewEmailSender returns new service for sending emails with attached Excel files generated in precious step
 func NewEmailSender(
 	logger *zap.SugaredLogger,
-	postmarkServerURL, postmarkServerToken, messageStream, fromEmailAddress, attachmentsDir string,
-	ticketRepository repository.TicketRepository,
+	postmarkServerURL, postmarkServerToken, messageStream, fromEmailAddress, feAttachmentsDirPath, sdAttachmentsDirPath string,
+	ticketRepository repository.TicketRepository, sdAgentEmails []string,
 ) Sender {
 	return &sender{
-		logger:              logger,
-		postmarkServerURL:   postmarkServerURL,
-		postmarkServerToken: postmarkServerToken,
-		messageStream:       messageStream,
-		fromEmailAddress:    fromEmailAddress,
-		attachmentsDir:      attachmentsDir,
-		ticketRepository:    ticketRepository,
-		client:              http.DefaultClient,
+		logger:               logger,
+		postmarkServerURL:    postmarkServerURL,
+		postmarkServerToken:  postmarkServerToken,
+		messageStream:        messageStream,
+		fromEmailAddress:     fromEmailAddress,
+		feAttachmentsDirPath: feAttachmentsDirPath,
+		sdAttachmentsDirPath: sdAttachmentsDirPath,
+		ticketRepository:     ticketRepository,
+		sdAgentEmails:        sdAgentEmails,
+		client:               http.DefaultClient,
 	}
 }
 
 type sender struct {
-	logger              *zap.SugaredLogger
-	postmarkServerURL   string
-	postmarkServerToken string
-	messageStream       string
-	fromEmailAddress    string
-	attachmentsDir      string
-	ticketRepository    repository.TicketRepository
-	client              *http.Client
+	logger               *zap.SugaredLogger
+	postmarkServerURL    string
+	postmarkServerToken  string
+	messageStream        string
+	fromEmailAddress     string
+	feAttachmentsDirPath string // directory with Excel files for field engineers
+	sdAttachmentsDirPath string // directory with Excel files for field engineers
+	ticketRepository     repository.TicketRepository
+	sdAgentEmails        []string
+	client               *http.Client
 }
 
-func (s sender) SendEmails(ctx context.Context) error {
-	emails, err := s.prepareEmails(ctx)
+func (s sender) SendEmailsForFieldEngineers(ctx context.Context) error {
+	addresses, err := s.ticketRepository.GetDistinctEmailAddresses(ctx)
+	if err != nil {
+		return err
+	}
+
+	s.logger.Info("Sending emails for Field Engineers")
+
+	caption := "<b>Hi, below are open tickets currently assigned to you.</b>"
+	return s.sendEmails(ctx, addresses, caption, "", s.feAttachmentsDirPath)
+}
+
+func (s sender) SendEmailsForServiceDesk(ctx context.Context) error {
+	s.logger.Info("Sending emails for Service Desk agents")
+
+	caption := "<b>Hi, below are all open tickets.</b>"
+	subject := "Open tickets report"
+	return s.sendEmails(ctx, s.sdAgentEmails, caption, subject, s.sdAttachmentsDirPath)
+}
+
+func (s sender) sendEmails(ctx context.Context, addresses []string, caption, subject, attachmentsDir string) error {
+	emails, err := s.prepareEmails(addresses, caption, subject, attachmentsDir)
 	if err != nil {
 		return err
 	}
@@ -115,29 +143,27 @@ func (s sender) SendEmails(ctx context.Context) error {
 	return err
 }
 
-func (s sender) prepareEmails(ctx context.Context) ([]Email, error) {
+func (s sender) prepareEmails(addresses []string, caption, emailSubject, attachmentsDir string) ([]Email, error) {
 	var emails []Email
-
-	addresses, err := s.ticketRepository.GetDistinctEmails(ctx)
-	if err != nil {
-		return emails, err
-	}
+	subject := emailSubject
 
 	for _, address := range addresses {
-		excelFile := address + ".xlsx"
+		fileName := address + ".xlsx"
 
-		subject := fmt.Sprintf("Open tickets assigned to %s", address)
-		caption := "<b>Hi, below are open tickets currently assigned to you.</b>"
+		if emailSubject == "" {
+			subject = fmt.Sprintf("Open tickets assigned to %s", address)
+		}
 
-		html, err := s.renderHTML(caption, excelFile)
+		filePath := filepath.Join(attachmentsDir, fileName)
+
+		html, err := s.renderHTML(caption, filePath)
 		if err != nil {
 			return nil, err
 		}
 
-		file := filepath.Join(s.attachmentsDir, excelFile)
-		fileData, err := os.ReadFile(file)
+		fileData, err := os.ReadFile(filePath)
 		if err != nil {
-			return emails, err
+			return emails, domain.WrapErrorf(err, domain.ErrorCodeUnknown, "Could not open attachment file")
 		}
 
 		fileDataEnc := base64.StdEncoding.EncodeToString(fileData)
@@ -151,7 +177,7 @@ func (s sender) prepareEmails(ctx context.Context) ([]Email, error) {
 			HtmlBody: html,
 			TextBody: text,
 			Attachments: []Attachment{{
-				Name:        excelFile,
+				Name:        fileName,
 				Content:     fileDataEnc,
 				ContentType: "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet",
 			}},
@@ -192,7 +218,7 @@ func (s sender) renderHTML(caption, excelFile string) (string, error) {
 
 	for i, row := range rows {
 		if i == 0 {
-			continue // skip the first row, similar info was already added to the emailS
+			continue // skip the first row, similar info was already added to the email
 		}
 
 		var htmlRow string
@@ -201,7 +227,10 @@ func (s sender) renderHTML(caption, excelFile string) (string, error) {
 			emptyColsNum = totalColsNum - len(row)
 		}
 
-		for _, colCell := range row {
+		for i, colCell := range row {
+			if i == totalColsNum {
+				break
+			}
 			htmlRow += "<td>" + colCell + "</td>"
 		}
 

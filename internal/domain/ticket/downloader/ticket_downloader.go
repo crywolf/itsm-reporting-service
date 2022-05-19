@@ -3,6 +3,7 @@ package ticketdownloader
 import (
 	"context"
 
+	"github.com/KompiTech/itsm-reporting-service/internal/domain"
 	"github.com/KompiTech/itsm-reporting-service/internal/domain/ticket"
 	"github.com/KompiTech/itsm-reporting-service/internal/repository"
 	"go.uber.org/zap"
@@ -51,36 +52,63 @@ func (d *ticketDownloader) DownloadTickets(ctx context.Context) error {
 	}
 
 	for _, channel := range channels {
-		userList, err := d.userRepository.GetUsersByChannel(ctx, channel.ChannelID)
+		d.logger.Infow("Downloading tickets from the channel", "channel", channel.Name)
+
+		var ticketList ticket.List
+		ticketsCount := 0
+
+		ticketList, err = d.client.GetIncidents(ctx, channel)
 		if err != nil {
 			return err
 		}
 
-		d.logger.Infow("Downloading tickets from the channel", "channel", channel.Name, "users found", len(userList))
-
-		var ticketList ticket.List
-
-		for _, user := range userList {
-			ticketList, err = d.client.GetIncidents(ctx, channel, user)
-			if err != nil {
-				return err
-			}
-
-			if err := d.ticketRepository.AddTicketList(ctx, ticketList); err != nil {
-				return err
-			}
-
-			ticketList, err = d.client.GetRequests(ctx, channel, user)
-			if err != nil {
-				return err
-			}
-
-			if err := d.ticketRepository.AddTicketList(ctx, ticketList); err != nil {
-				return err
-			}
+		err = d.resolveAssignee(ctx, channel.ChannelID, ticketList)
+		if err != nil {
+			return err
 		}
 
-		d.logger.Infof("Tickets from the '%s' channel succesfully downloaded", channel.Name)
+		if err := d.ticketRepository.AddTicketList(ctx, ticketList); err != nil {
+			return err
+		}
+
+		ticketsCount += len(ticketList)
+
+		ticketList, err = d.client.GetRequests(ctx, channel)
+		if err != nil {
+			return err
+		}
+
+		err = d.resolveAssignee(ctx, channel.ChannelID, ticketList)
+		if err != nil {
+			return err
+		}
+
+		if err := d.ticketRepository.AddTicketList(ctx, ticketList); err != nil {
+			return err
+		}
+
+		ticketsCount += len(ticketList)
+
+		d.logger.Infow("Tickets from the channel successfully downloaded", "channel", channel.Name, "tickets found", ticketsCount)
+	}
+
+	return nil
+}
+
+func (d *ticketDownloader) resolveAssignee(ctx context.Context, channelID string, ticketList ticket.List) error {
+	for i, tckt := range ticketList {
+		if tckt.UserID != "" {
+			user, err := d.userRepository.GetUserInChannel(ctx, channelID, tckt.UserID)
+			if err != nil {
+				return domain.WrapErrorf(err, domain.ErrorCodeUnknown, "could not get user '%s' from repository", tckt.UserID)
+			}
+
+			tckt.UserName = user.Name
+			tckt.UserEmail = user.Email
+			tckt.UserOrgName = user.OrgName
+
+			ticketList[i] = tckt
+		}
 	}
 
 	return nil

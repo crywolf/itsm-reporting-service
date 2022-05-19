@@ -5,6 +5,7 @@ import (
 	"testing"
 
 	"github.com/KompiTech/itsm-reporting-service/internal/domain/user"
+	"github.com/KompiTech/itsm-reporting-service/internal/repository"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
 )
@@ -14,6 +15,7 @@ func TestUserRepositoryMemory_AddingAndGettingUsers(t *testing.T) {
 	repo := NewUserRepositoryMemory()
 
 	channelID := "c5bea8d9-1d90-4d90-a445-e6ce74dff4cc"
+	channel2ID := "8b6353c3-46ca-485d-87c3-66bc36c70d88"
 
 	u1 := user.User{
 		ChannelID: channelID,
@@ -26,7 +28,7 @@ func TestUserRepositoryMemory_AddingAndGettingUsers(t *testing.T) {
 		Email:     "second@user.com",
 	}
 	u3 := user.User{
-		ChannelID: "8b6353c3-46ca-485d-87c3-66bc36c70d88",
+		ChannelID: channel2ID,
 		UserID:    "bb3f1241-6f52-4227-92fc-949385895cd5",
 		Email:     "third@user.com",
 	}
@@ -36,10 +38,20 @@ func TestUserRepositoryMemory_AddingAndGettingUsers(t *testing.T) {
 	err := repo.AddUserList(ctx, list)
 	require.NoError(t, err)
 
-	retUserList, err := repo.GetUsersByChannel(ctx, channelID)
+	notFoundUser, err := repo.GetUserInChannel(ctx, channelID, "nonexistentID")
+	require.Equal(t, notFoundUser, user.User{})
+	require.ErrorIs(t, err, repository.ErrNotFound)
+
+	notFoundUser, err = repo.GetUserInChannel(ctx, channel2ID, u2.UserID)
+	require.Equal(t, notFoundUser, user.User{})
+	require.ErrorIs(t, err, repository.ErrNotFound)
+
+	notFoundUser, err = repo.GetUserInChannel(ctx, channelID, u3.UserID)
+	require.Equal(t, notFoundUser, user.User{})
+	require.ErrorIs(t, err, repository.ErrNotFound)
+
+	retUser, err := repo.GetUserInChannel(ctx, channelID, u2.UserID)
 	require.NoError(t, err)
 
-	assert.Len(t, retUserList, 2)
-	assert.Equal(t, u1, retUserList[0])
-	assert.Equal(t, u2, retUserList[1])
+	assert.Equal(t, u2, retUser)
 }

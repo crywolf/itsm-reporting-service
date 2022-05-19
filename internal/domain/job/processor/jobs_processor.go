@@ -275,7 +275,11 @@ func (p *processor) generateExcelFiles(ctx context.Context, jobID ref.UUID) erro
 		p.logger.Errorw("Could not mark job as Excel files generation started", "error", err)
 	}
 
-	if err := p.excelGenerator.GenerateExcelFiles(ctx); err != nil {
+	if err := p.excelGenerator.GenerateExcelFilesForFieldEngineers(ctx); err != nil {
+		return err
+	}
+
+	if err := p.excelGenerator.GenerateExcelFilesForServiceDesk(ctx); err != nil {
 		return err
 	}
 
@@ -303,7 +307,11 @@ func (p *processor) sendEmails(ctx context.Context, jobID ref.UUID) error {
 		p.logger.Errorw("Could not mark job as email sending started", "error", err)
 	}
 
-	if err := p.emailSender.SendEmails(ctx); err != nil {
+	if err := p.emailSender.SendEmailsForFieldEngineers(ctx); err != nil {
+		return err
+	}
+
+	if err := p.emailSender.SendEmailsForServiceDesk(ctx); err != nil {
 		return err
 	}
 

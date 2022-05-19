@@ -13,7 +13,7 @@ type UserClientMock struct {
 	mock.Mock
 }
 
-func (m *UserClientMock) GetEngineers(_ context.Context, channel channel.Channel) (user.List, error) {
+func (m *UserClientMock) GetUsers(_ context.Context, channel channel.Channel) (user.List, error) {
 	args := m.Called(channel)
 	return args.Get(0).(user.List), args.Error(1)
 }
