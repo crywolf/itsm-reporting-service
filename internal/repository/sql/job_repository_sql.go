@@ -45,8 +45,8 @@ func NewJobRepositorySQL(clock repository.Clock, db *sql.DB, rand io.Reader) (re
 	if _, err := db.Exec(
 		"CREATE TABLE IF NOT EXISTS " + tableName + " (" +
 			"uuid UUID PRIMARY KEY, " +
-			"type VARCHAR(30) NOT NULL," +
-			"created_at VARCHAR(30) NOT NULL," +
+			"type VARCHAR(30) NOT NULL, " +
+			"created_at VARCHAR(30) NOT NULL, " +
 			"final_status TEXT, " +
 			"channels_download_started_at VARCHAR(30), " +
 			"channels_download_finished_at VARCHAR(30), " +
@@ -61,6 +61,13 @@ func NewJobRepositorySQL(clock repository.Clock, db *sql.DB, rand io.Reader) (re
 			")",
 	); err != nil {
 		return nil, fmt.Errorf("error creating table %s: %v", tableName, err)
+	}
+
+	// DB auto-migration if DB was already in use in production
+	if _, err := db.Exec(
+		"ALTER TABLE " + tableName + " ADD COLUMN IF NOT EXISTS type VARCHAR(30) NOT NULL DEFAULT 'all'",
+	); err != nil {
+		return nil, fmt.Errorf("error adding 'type' column to the table %s: %v", tableName, err)
 	}
 
 	return &jobRepositorySQL{
