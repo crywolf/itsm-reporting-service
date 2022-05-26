@@ -4,6 +4,8 @@ package memory
 type Job struct {
 	ID string
 
+	Type string
+
 	CreatedAt string
 
 	ChannelsDownloadStartedAt string

@@ -5,6 +5,7 @@ import (
 
 	"github.com/KompiTech/itsm-reporting-service/internal/domain/job"
 	"github.com/KompiTech/itsm-reporting-service/internal/domain/ref"
+	"github.com/KompiTech/itsm-reporting-service/internal/http/rest/api"
 	"github.com/stretchr/testify/mock"
 )
 
@@ -13,8 +14,8 @@ type JobServiceMock struct {
 	mock.Mock
 }
 
-func (s *JobServiceMock) CreateJob(_ context.Context) (ref.UUID, error) {
-	args := s.Called()
+func (s *JobServiceMock) CreateJob(_ context.Context, params api.CreateJobParams) (ref.UUID, error) {
+	args := s.Called(params)
 	return args.Get(0).(ref.UUID), args.Error(1)
 }
 

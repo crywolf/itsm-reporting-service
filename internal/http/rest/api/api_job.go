@@ -15,12 +15,22 @@
 // swagger:meta
 package api
 
+import (
+	"github.com/KompiTech/itsm-reporting-service/internal/domain/job"
+)
+
 // Job API object
 // swagger:model
 type Job struct {
 	// required: true
 	// swagger:strfmt uuid
 	UUID string `json:"uuid"`
+
+	// Type of the job
+	// required: true
+	// example: all
+	// swagger:strfmt string
+	Type job.Type `json:"type"`
 
 	// Time when the job was created
 	// required: true
@@ -71,13 +81,25 @@ type Job struct {
 	FinalStatus string `json:"final_status,omitempty"`
 }
 
+// CreateJobParams is the payload used to create new job
+// swagger:model
+type CreateJobParams struct {
+	// Type of the job [FE report only|SD report only|all]
+	// required: true
+	// example: all
+	// swagger:strfmt string
+	Type job.Type `json:"type"`
+}
+
 // NOTE: Types defined here are purely for documentation purposes
 // these types are not used by any of the handlers
 
-/*// UUID represents UUID of a resource
-// swagger:strfmt uuid
-type UUID string
-*/
+// swagger:parameters CreateJob
+type createJobParameterWrapper struct {
+	// in: body
+	// required: true
+	Body CreateJobParams
+}
 
 // Data structure representing a single job
 // swagger:response jobResponse

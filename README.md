@@ -6,7 +6,8 @@ Requires Go ver. >= 1.16
 
 to regenerate SQL calls to be used in tests (using mocking library `copyist`) use command 
 `COPYIST_RECORD=1 go test -v -count=1 -race -timeout 10s ./internal/...`
-with connection to the running test database correctly established
+with connection to the running test database correctly established (`export TEST_DB_CONNECTION_STRING=postgresql://root@localhost:26257?sslmode=disable`)
+
 
 `make run` starts application for local use/testing
 

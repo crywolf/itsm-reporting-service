@@ -10,6 +10,7 @@ import (
 	chandownloader "github.com/KompiTech/itsm-reporting-service/internal/domain/channel/downloader"
 	"github.com/KompiTech/itsm-reporting-service/internal/domain/email"
 	"github.com/KompiTech/itsm-reporting-service/internal/domain/excel"
+	"github.com/KompiTech/itsm-reporting-service/internal/domain/job"
 	"github.com/KompiTech/itsm-reporting-service/internal/domain/ref"
 	ticketdownloader "github.com/KompiTech/itsm-reporting-service/internal/domain/ticket/downloader"
 	userdownloader "github.com/KompiTech/itsm-reporting-service/internal/domain/user/downloader"
@@ -275,12 +276,16 @@ func (p *processor) generateExcelFiles(ctx context.Context, jobID ref.UUID) erro
 		p.logger.Errorw("Could not mark job as Excel files generation started", "error", err)
 	}
 
-	if err := p.excelGenerator.GenerateExcelFilesForFieldEngineers(ctx); err != nil {
-		return err
+	if p.isJobForFE(j) {
+		if err := p.excelGenerator.GenerateExcelFilesForFieldEngineers(ctx); err != nil {
+			return err
+		}
 	}
 
-	if err := p.excelGenerator.GenerateExcelFilesForServiceDesk(ctx); err != nil {
-		return err
+	if p.isJobForSD(j) {
+		if err := p.excelGenerator.GenerateExcelFilesForServiceDesk(ctx); err != nil {
+			return err
+		}
 	}
 
 	j.ExcelFilesGenerationFinishedAt.SetNow()
@@ -307,12 +312,16 @@ func (p *processor) sendEmails(ctx context.Context, jobID ref.UUID) error {
 		p.logger.Errorw("Could not mark job as email sending started", "error", err)
 	}
 
-	if err := p.emailSender.SendEmailsForFieldEngineers(ctx); err != nil {
-		return err
+	if p.isJobForFE(j) {
+		if err := p.emailSender.SendEmailsForFieldEngineers(ctx); err != nil {
+			return err
+		}
 	}
 
-	if err := p.emailSender.SendEmailsForServiceDesk(ctx); err != nil {
-		return err
+	if p.isJobForSD(j) {
+		if err := p.emailSender.SendEmailsForServiceDesk(ctx); err != nil {
+			return err
+		}
 	}
 
 	j.EmailsSendingFinishedAt.SetNow()
@@ -360,4 +369,12 @@ func (p *processor) markJobAsFinished(ctx context.Context, jobID ref.UUID) {
 	}
 
 	p.logger.Infow("Job finished", "time", time.Now().Format(time.RFC3339), "id", j.UUID())
+}
+
+func (p *processor) isJobForFE(j job.Job) bool {
+	return j.Type == job.TypeFE || j.Type == job.TypeAll
+}
+
+func (p *processor) isJobForSD(j job.Job) bool {
+	return j.Type == job.TypeSD || j.Type == job.TypeAll
 }

@@ -6,6 +6,7 @@ import (
 
 	jobprocessor "github.com/KompiTech/itsm-reporting-service/internal/domain/job/processor"
 	jobsvc "github.com/KompiTech/itsm-reporting-service/internal/domain/job/service"
+	converters "github.com/KompiTech/itsm-reporting-service/internal/http/rest/api/input_converters"
 	"github.com/KompiTech/itsm-reporting-service/internal/http/rest/presenters"
 	"github.com/julienschmidt/httprouter"
 	"github.com/prometheus/client_golang/prometheus/promhttp"
@@ -14,14 +15,15 @@ import (
 
 // Server is a http.Handler with dependencies
 type Server struct {
-	Addr                    string
-	URISchema               string
-	router                  *httprouter.Router
-	logger                  *zap.SugaredLogger
-	jobsService             jobsvc.JobService
-	jobsPresenter           presenters.JobPresenter
-	jobsProcessor           jobprocessor.JobProcessor
-	ExternalLocationAddress string
+	Addr                     string
+	URISchema                string
+	router                   *httprouter.Router
+	logger                   *zap.SugaredLogger
+	jobsService              jobsvc.JobService
+	jobsPresenter            presenters.JobPresenter
+	jobInputPayloadConverter converters.JobPayloadConverter
+	jobsProcessor            jobprocessor.JobProcessor
+	ExternalLocationAddress  string
 }
 
 // Config contains server configuration and dependencies
@@ -56,6 +58,7 @@ func NewServer(cfg Config) *Server {
 		s.logger.Fatal("jobsProcessor not set")
 	}
 	s.jobsProcessor.WaitForJobs()
+	s.registerInputConverters()
 	s.registerPresenters()
 	s.registerRoutes()
 

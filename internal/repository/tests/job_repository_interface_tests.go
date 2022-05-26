@@ -16,7 +16,7 @@ import (
 func TestJobRepositoryAddingAndGettingJob(t *testing.T, repo repository.JobRepository, clock repository.Clock) {
 	ctx := context.Background()
 
-	job1 := job.Job{}
+	job1 := job.Job{Type: job.TypeAll}
 
 	jobID, err := repo.AddJob(ctx, job1)
 	require.NoError(t, err)
@@ -32,6 +32,7 @@ func TestJobRepositoryAddingAndGettingJob(t *testing.T, repo repository.JobRepos
 	assert.Equal(t, jobID, retJob.UUID())
 	assert.Empty(t, retJob.ChannelsDownloadFinishedAt)
 	assert.Empty(t, retJob.FinalStatus)
+	assert.Equal(t, job1.Type, retJob.Type)
 
 	assert.NotEmpty(t, retJob.CreatedAt)
 	assert.Equal(t, clock.NowFormatted(), retJob.CreatedAt)
@@ -40,7 +41,7 @@ func TestJobRepositoryAddingAndGettingJob(t *testing.T, repo repository.JobRepos
 func TestJobRepositoryUpdateJob(t *testing.T, repo repository.JobRepository) {
 	ctx := context.Background()
 
-	job1 := job.Job{}
+	job1 := job.Job{Type: job.TypeAll}
 
 	jobID, err := repo.AddJob(ctx, job1)
 	require.NoError(t, err)
@@ -70,7 +71,7 @@ func TestJobRepositoryUpdateJob(t *testing.T, repo repository.JobRepository) {
 func TestJobRepositoryListJobs(t *testing.T, repo repository.JobRepository, clock *mocks.FixedClock, repositorySize int) {
 	ctx := context.Background()
 
-	job1 := job.Job{}
+	job1 := job.Job{Type: job.TypeFE}
 
 	var thirdJobID, lastJobID ref.UUID
 	for i := 0; i < repositorySize+2; i++ {
@@ -100,7 +101,7 @@ func TestJobRepositoryGetLastJob(t *testing.T, repo repository.JobRepository, cl
 	// there are no jobs yet, it should return error
 	require.EqualError(t, err, "no jobs in queue")
 
-	job1 := job.Job{}
+	job1 := job.Job{Type: job.TypeAll}
 	var lastJobID ref.UUID
 	for i := 0; i < 5; i++ {
 		clock.AddTime(10 * time.Second)
@@ -112,4 +113,6 @@ func TestJobRepositoryGetLastJob(t *testing.T, repo repository.JobRepository, cl
 	require.NoError(t, err)
 
 	assert.Equal(t, lastJobID, retJob.UUID())
+	assert.Equal(t, job1.Type, retJob.Type)
+
 }

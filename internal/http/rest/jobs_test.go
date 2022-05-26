@@ -1,6 +1,7 @@
 package rest
 
 import (
+	"bytes"
 	"io/ioutil"
 	"net/http"
 	"net/http/httptest"
@@ -9,6 +10,7 @@ import (
 	"github.com/KompiTech/itsm-reporting-service/internal/domain/job"
 	jobprocessor "github.com/KompiTech/itsm-reporting-service/internal/domain/job/processor"
 	"github.com/KompiTech/itsm-reporting-service/internal/domain/ref"
+	"github.com/KompiTech/itsm-reporting-service/internal/http/rest/api"
 	"github.com/KompiTech/itsm-reporting-service/internal/mocks"
 	"github.com/KompiTech/itsm-reporting-service/internal/testutils"
 	"github.com/stretchr/testify/assert"
@@ -21,12 +23,43 @@ func TestCreateJobHandler(t *testing.T) {
 
 	t.Parallel()
 
+	t.Run("with invalid payload", func(t *testing.T) {
+		jobProcessor := new(mocks.JobProcessorMock)
+
+		server := NewServer(Config{
+			Addr:                    "service.url",
+			Logger:                  logger,
+			JobsProcessor:           jobProcessor,
+			ExternalLocationAddress: "http://service.url",
+		})
+
+		payload := []byte(`{"type":"some nonsense"}`)
+
+		body := bytes.NewReader(payload)
+		req := httptest.NewRequest("POST", "/jobs", body)
+
+		w := httptest.NewRecorder()
+		server.ServeHTTP(w, req)
+		resp := w.Result()
+
+		defer func() { _ = resp.Body.Close() }()
+		b, err := ioutil.ReadAll(resp.Body)
+		if err != nil {
+			t.Fatalf("could not read response: %v", err)
+		}
+
+		assert.Equal(t, http.StatusBadRequest, resp.StatusCode, "Status code")
+
+		expectedJSON := `{"error":"type must be one of ['FE report only' 'SD report only' 'all']"}`
+		assert.JSONEq(t, expectedJSON, string(b), "response does not match")
+	})
+
 	t.Run("when the job processor is busy", func(t *testing.T) {
 		jobID := ref.UUID("38316161-3035-4864-ad30-6231392d3433")
 		failingJob := job.Job{}
 
 		jobsSvc := new(mocks.JobServiceMock)
-		jobsSvc.On("CreateJob").
+		jobsSvc.On("CreateJob", api.CreateJobParams{Type: job.TypeAll}).
 			Return(jobID, nil)
 
 		jobsSvc.On("GetJob", jobID).Return(failingJob, nil)
@@ -44,7 +77,10 @@ func TestCreateJobHandler(t *testing.T) {
 			ExternalLocationAddress: "http://service.url",
 		})
 
-		req := httptest.NewRequest("POST", "/jobs", nil)
+		payload := []byte(`{"type":"all"}`)
+
+		body := bytes.NewReader(payload)
+		req := httptest.NewRequest("POST", "/jobs", body)
 
 		w := httptest.NewRecorder()
 		server.ServeHTTP(w, req)
@@ -66,7 +102,7 @@ func TestCreateJobHandler(t *testing.T) {
 	t.Run("when the job processor is ready", func(t *testing.T) {
 		jobID := ref.UUID("38316161-3035-4864-ad30-6231392d3433")
 		jobsSvc := new(mocks.JobServiceMock)
-		jobsSvc.On("CreateJob").
+		jobsSvc.On("CreateJob", api.CreateJobParams{Type: job.TypeAll}).
 			Return(jobID, nil)
 
 		jobProcessor := new(mocks.JobProcessorMock)
@@ -80,7 +116,10 @@ func TestCreateJobHandler(t *testing.T) {
 			ExternalLocationAddress: "http://service.url",
 		})
 
-		req := httptest.NewRequest("POST", "/jobs", nil)
+		payload := []byte(`{"type":"all"}`)
+
+		body := bytes.NewReader(payload)
+		req := httptest.NewRequest("POST", "/jobs", body)
 
 		w := httptest.NewRecorder()
 		server.ServeHTTP(w, req)
@@ -92,7 +131,7 @@ func TestCreateJobHandler(t *testing.T) {
 	})
 }
 
-func TestGetIncidentHandler(t *testing.T) {
+func TestGetJobHandler(t *testing.T) {
 	logger, _ := testutils.NewTestLogger()
 	defer func() { _ = logger.Sync() }()
 
@@ -101,6 +140,7 @@ func TestGetIncidentHandler(t *testing.T) {
 		CreatedAt:                  "2022-03-14T00:10:00+01:00",
 		ChannelsDownloadFinishedAt: "2022-03-14T00:12:00+01:00",
 		FinalStatus:                "success",
+		Type:                       job.TypeAll,
 	}
 	err := retJob.SetUUID(ref.UUID(uuid))
 	require.NoError(t, err)
@@ -136,6 +176,7 @@ func TestGetIncidentHandler(t *testing.T) {
 
 	expectedJSON := `{
 		"final_status":"success",
+		"type":"all",
 		"created_at":"2022-03-14T00:10:00+01:00",
 		"channels_download_finished_at":"2022-03-14T00:12:00+01:00",
 		"uuid":"cb2fe2a7-ab9f-4f6d-9fd6-c7c209403cf0"
@@ -149,18 +190,21 @@ func TestListJobHandler(t *testing.T) {
 
 	var list []job.Job
 	job1 := job.Job{
+		Type:      job.TypeFE,
 		CreatedAt: "2022-03-12T11:47:22+01:00",
 	}
 	err := job1.SetUUID("0756952a-da33-4fe0-a883-9f899444c859")
 	require.NoError(t, err)
 
 	job2 := job.Job{
+		Type:      job.TypeAll,
 		CreatedAt: "2022-03-13T21:14:33+01:00",
 	}
 	err = job2.SetUUID("78202ce5-68aa-4fec-9a80-b863ac38bc06")
 	require.NoError(t, err)
 
 	job3 := job.Job{
+		Type:      job.TypeSD,
 		CreatedAt: "2022-03-14T00:10:00+01:00",
 	}
 	err = job3.SetUUID("f7b7fc74-e740-4c5f-a348-e8dc35b987ab")
@@ -197,15 +241,18 @@ func TestListJobHandler(t *testing.T) {
 	expectedJSON := `[
 		{
 			"uuid": "0756952a-da33-4fe0-a883-9f899444c859",
-			"created_at": "2022-03-12T11:47:22+01:00"
+			"created_at": "2022-03-12T11:47:22+01:00",
+			"type": "FE report only"
 		},		
 		{
 			"uuid": "78202ce5-68aa-4fec-9a80-b863ac38bc06",
-			"created_at": "2022-03-13T21:14:33+01:00"
+			"created_at": "2022-03-13T21:14:33+01:00",
+			"type": "all"
 		},
 		{
 			"uuid": "f7b7fc74-e740-4c5f-a348-e8dc35b987ab",
-			"created_at": "2022-03-14T00:10:00+01:00"
+			"created_at": "2022-03-14T00:10:00+01:00",
+			"type": "SD report only"
 		}
 	]`
 

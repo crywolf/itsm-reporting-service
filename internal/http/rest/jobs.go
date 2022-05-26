@@ -19,7 +19,15 @@ import (
 func (s *Server) CreateJob() func(http.ResponseWriter, *http.Request, httprouter.Params) {
 	return func(w http.ResponseWriter, r *http.Request, _ httprouter.Params) {
 		ctx := r.Context()
-		newID, err := s.jobsService.CreateJob(ctx)
+
+		jobPayload, err := s.jobInputPayloadConverter.JobCreateParamsFromBody(r)
+		if err != nil {
+			s.logger.Warnw("CreateJob handler failed", "error", err)
+			s.jobsPresenter.RenderError(w, "", err)
+			return
+		}
+
+		newID, err := s.jobsService.CreateJob(ctx, jobPayload)
 		if err != nil {
 			s.logger.Errorw("CreateJob handler failed", "error", err)
 			s.jobsPresenter.RenderError(w, "", err)

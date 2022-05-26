@@ -28,7 +28,7 @@ func NewJobRepositoryMemory(clock repository.Clock) repository.JobRepository {
 }
 
 // AddJob adds the given job to the repository (repository has fixed length)
-func (r *jobRepositoryMemory) AddJob(_ context.Context, _ job.Job) (ref.UUID, error) {
+func (r *jobRepositoryMemory) AddJob(_ context.Context, job job.Job) (ref.UUID, error) {
 	now := r.clock.NowFormatted().String()
 
 	jobID, err := repository.GenerateUUID(r.Rand)
@@ -38,6 +38,7 @@ func (r *jobRepositoryMemory) AddJob(_ context.Context, _ job.Job) (ref.UUID, er
 
 	storedJob := Job{
 		ID:        jobID.String(),
+		Type:      job.Type.String(),
 		CreatedAt: now,
 	}
 
@@ -54,6 +55,7 @@ func (r *jobRepositoryMemory) AddJob(_ context.Context, _ job.Job) (ref.UUID, er
 func (r *jobRepositoryMemory) UpdateJob(_ context.Context, job job.Job) (ref.UUID, error) {
 	storedJob := Job{
 		ID:                             job.UUID().String(),
+		Type:                           job.Type.String(),
 		ChannelsDownloadStartedAt:      job.ChannelsDownloadStartedAt.String(),
 		ChannelsDownloadFinishedAt:     job.ChannelsDownloadFinishedAt.String(),
 		UsersDownloadStartedAt:         job.UsersDownloadStartedAt.String(),
@@ -134,9 +136,13 @@ func (r jobRepositoryMemory) convertStoredToDomainIncident(storedJob Job) (job.J
 
 	err := j.SetUUID(ref.UUID(storedJob.ID))
 	if err != nil {
-		return job.Job{}, domain.WrapErrorf(err, domain.ErrorCodeUnknown, errMsg, "storedJob.ID")
+		return j, domain.WrapErrorf(err, domain.ErrorCodeUnknown, errMsg, "storedJob.ID")
 	}
 
+	j.Type, err = job.NewTypeFromString(storedJob.Type)
+	if err != nil {
+		return j, domain.WrapErrorf(err, domain.ErrorCodeUnknown, errMsg, "storedJob.Type")
+	}
 	j.CreatedAt = types.DateTime(storedJob.CreatedAt)
 	j.ChannelsDownloadStartedAt = types.DateTime(storedJob.ChannelsDownloadStartedAt)
 	j.ChannelsDownloadFinishedAt = types.DateTime(storedJob.ChannelsDownloadFinishedAt)

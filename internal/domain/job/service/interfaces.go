@@ -5,12 +5,13 @@ import (
 
 	"github.com/KompiTech/itsm-reporting-service/internal/domain/job"
 	"github.com/KompiTech/itsm-reporting-service/internal/domain/ref"
+	"github.com/KompiTech/itsm-reporting-service/internal/http/rest/api"
 )
 
 // JobService provides job operations
 type JobService interface {
 	// CreateJob creates new job and adds it to the repository
-	CreateJob(ctx context.Context) (ref.UUID, error)
+	CreateJob(ctx context.Context, params api.CreateJobParams) (ref.UUID, error)
 
 	// UpdateJob updates the given job in the repository
 	UpdateJob(ctx context.Context, j job.Job) (ref.UUID, error)
