@@ -135,7 +135,7 @@ func (g excelGen) generateExcelFilesForFE(ctx context.Context, emails []string) 
 		if err := f.SetCellValue(sheet, "C3", "State"); err != nil {
 			return domain.WrapErrorf(err, domain.ErrorCodeUnknown, "could not write data to Excel file '%s'", filename)
 		}
-		if err := f.SetCellValue(sheet, "D3", "Short description"); err != nil {
+		if err := f.SetCellValue(sheet, "D3", "Title"); err != nil {
 			return domain.WrapErrorf(err, domain.ErrorCodeUnknown, "could not write data to Excel file '%s'", filename)
 		}
 		if err := f.SetCellValue(sheet, "E3", "Location"); err != nil {
@@ -214,7 +214,7 @@ func (g excelGen) generateExcelFilesForSD(ctx context.Context, emails []string) 
 		if err := f.SetCellValue(sheet, "C3", "State"); err != nil {
 			return domain.WrapErrorf(err, domain.ErrorCodeUnknown, "could not write data to Excel file '%s'", filename)
 		}
-		if err := f.SetCellValue(sheet, "D3", "Short description"); err != nil {
+		if err := f.SetCellValue(sheet, "D3", "Title"); err != nil {
 			return domain.WrapErrorf(err, domain.ErrorCodeUnknown, "could not write data to Excel file '%s'", filename)
 		}
 		if err := f.SetCellValue(sheet, "E3", "Location"); err != nil {
