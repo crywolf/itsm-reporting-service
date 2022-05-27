@@ -36,7 +36,7 @@ type JobRepository interface {
 	GetLastJob(ctx context.Context) (job.Job, error)
 
 	// ListJobs returns the list of jobs from the repository
-	ListJobs(ctx context.Context) ([]job.Job, error)
+	ListJobs(ctx context.Context, page, perPage uint) ([]job.Job, error)
 }
 
 // ChannelRepository provides access to the channel repository

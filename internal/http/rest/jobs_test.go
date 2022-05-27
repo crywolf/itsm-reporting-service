@@ -14,6 +14,7 @@ import (
 	"github.com/KompiTech/itsm-reporting-service/internal/mocks"
 	"github.com/KompiTech/itsm-reporting-service/internal/testutils"
 	"github.com/stretchr/testify/assert"
+	"github.com/stretchr/testify/mock"
 	"github.com/stretchr/testify/require"
 )
 
@@ -213,7 +214,7 @@ func TestListJobHandler(t *testing.T) {
 	list = append(list, job1, job2, job3)
 
 	jobsSvc := new(mocks.JobServiceMock)
-	jobsSvc.On("ListJobs").
+	jobsSvc.On("ListJobs", mock.AnythingOfType("*converters.paginationParams")).
 		Return(list, nil)
 
 	jobProcessor := new(mocks.JobProcessorMock)

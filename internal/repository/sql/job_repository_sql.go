@@ -15,8 +15,6 @@ import (
 	_ "github.com/lib/pq" // Package pq is a pure Go Postgres driver for the database/sql package
 )
 
-const repositorySize = 10
-
 // jobRepositorySQL keeps data in SQL database
 type jobRepositorySQL struct {
 	Rand      io.Reader
@@ -240,14 +238,12 @@ func (r jobRepositorySQL) GetLastJob(ctx context.Context) (job.Job, error) {
 	return j, nil
 }
 
-func (r jobRepositorySQL) ListJobs(ctx context.Context) ([]job.Job, error) {
-	// TODO - add pagination?
-
+func (r jobRepositorySQL) ListJobs(ctx context.Context, page, perPage uint) ([]job.Job, error) {
 	var list []job.Job
 
 	rows, err := r.db.QueryContext(
 		ctx,
-		"SELECT "+r.tableFields()+" FROM "+r.tableName+" ORDER BY created_at DESC LIMIT $1", repositorySize,
+		"SELECT "+r.tableFields()+" FROM "+r.tableName+" ORDER BY created_at DESC OFFSET $1 LIMIT $2", page*perPage, perPage,
 	)
 	if err != nil {
 		return list, err

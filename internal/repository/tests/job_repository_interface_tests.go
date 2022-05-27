@@ -68,30 +68,44 @@ func TestJobRepositoryUpdateJob(t *testing.T, repo repository.JobRepository) {
 	assert.Equal(t, retJobCreatedAt, updatedJob.CreatedAt) // this should not be changed
 }
 
-func TestJobRepositoryListJobs(t *testing.T, repo repository.JobRepository, clock *mocks.FixedClock, repositorySize int) {
+func TestJobRepositoryListJobs(t *testing.T, repo repository.JobRepository, clock *mocks.FixedClock) {
 	ctx := context.Background()
 
 	job1 := job.Job{Type: job.TypeFE}
 
-	var thirdJobID, lastJobID ref.UUID
-	for i := 0; i < repositorySize+2; i++ {
+	itemsPerPage := 6
+	var firstJobID, lastOnTheFirstPageJobID, lastJobID ref.UUID
+	for i := 0; i < itemsPerPage+4; i++ {
 		clock.AddTime(10 * time.Second)
 		jobID, err := repo.AddJob(ctx, job1)
-		if i == 2 {
-			thirdJobID = jobID
+		require.NoError(t, err)
+		if i == 0 {
+			firstJobID = jobID
+		}
+		if i == 4 {
+			lastOnTheFirstPageJobID = jobID
 		}
 		lastJobID = jobID
-		require.NoError(t, err)
 	}
 
-	retJobs, err := repo.ListJobs(ctx)
+	// 1st page
+	pageNum := 0
+	retJobs0, err := repo.ListJobs(ctx, uint(pageNum), uint(itemsPerPage))
 	require.NoError(t, err)
 
-	// repo has fixed size first two jobs are discarded (FIFO)
-	assert.Len(t, retJobs, repositorySize)
-	// ListJobs returns jobs in reverse order (last one on top, 3rd would be last)
-	assert.Equal(t, lastJobID, retJobs[0].UUID(), "last job")
-	assert.Equal(t, thirdJobID, retJobs[repositorySize-1].UUID(), "third job")
+	assert.Len(t, retJobs0, itemsPerPage)
+	// ListJobs returns jobs in reverse order (last one on top)
+	assert.Equal(t, lastJobID, retJobs0[0].UUID(), "first job on the 1st page")
+	assert.Equal(t, lastOnTheFirstPageJobID, retJobs0[itemsPerPage-1].UUID(), "last job on the 1st page")
+
+	// 2nd page
+	pageNum = 1
+	retJobs1, err := repo.ListJobs(ctx, uint(pageNum), uint(itemsPerPage))
+	require.NoError(t, err)
+
+	assert.Len(t, retJobs1, 4)
+	// ListJobs returns jobs in reverse order (last one on top)
+	assert.Equal(t, firstJobID, retJobs1[3].UUID(), "last job on the 2nd page")
 }
 
 func TestJobRepositoryGetLastJob(t *testing.T, repo repository.JobRepository, clock *mocks.FixedClock) {

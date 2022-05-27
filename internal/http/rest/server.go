@@ -77,3 +77,8 @@ func (s Server) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 
 	s.router.ServeHTTP(w, r)
 }
+
+// PaginationParams parses request query and returns params with information about requested page number and items per page to be displayed
+func (s Server) PaginationParams(r *http.Request) (converters.PaginationParams, error) {
+	return converters.NewPaginationParams(r)
+}

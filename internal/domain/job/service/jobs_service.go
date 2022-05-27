@@ -6,6 +6,7 @@ import (
 	"github.com/KompiTech/itsm-reporting-service/internal/domain/job"
 	"github.com/KompiTech/itsm-reporting-service/internal/domain/ref"
 	"github.com/KompiTech/itsm-reporting-service/internal/http/rest/api"
+	converters "github.com/KompiTech/itsm-reporting-service/internal/http/rest/api/input_converters"
 	"github.com/KompiTech/itsm-reporting-service/internal/repository"
 )
 
@@ -34,6 +35,6 @@ func (s jobService) GetJob(ctx context.Context, ID ref.UUID) (job.Job, error) {
 	return s.repo.GetJob(ctx, ID)
 }
 
-func (s jobService) ListJobs(ctx context.Context) ([]job.Job, error) {
-	return s.repo.ListJobs(ctx)
+func (s jobService) ListJobs(ctx context.Context, paginationParams converters.PaginationParams) ([]job.Job, error) {
+	return s.repo.ListJobs(ctx, paginationParams.Page(), paginationParams.ItemsPerPage())
 }

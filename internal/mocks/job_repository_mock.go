@@ -33,7 +33,7 @@ func (m *JobRepositoryMock) GetLastJob(_ context.Context) (job.Job, error) {
 	return args.Get(0).(job.Job), args.Error(1)
 }
 
-func (m *JobRepositoryMock) ListJobs(_ context.Context) ([]job.Job, error) {
+func (m *JobRepositoryMock) ListJobs(_ context.Context, _, _ uint) ([]job.Job, error) {
 	//TODO implement me
 	panic("implement me")
 }

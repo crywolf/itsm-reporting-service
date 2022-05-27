@@ -6,6 +6,7 @@ import (
 	"github.com/KompiTech/itsm-reporting-service/internal/domain/job"
 	"github.com/KompiTech/itsm-reporting-service/internal/domain/ref"
 	"github.com/KompiTech/itsm-reporting-service/internal/http/rest/api"
+	converters "github.com/KompiTech/itsm-reporting-service/internal/http/rest/api/input_converters"
 	"github.com/stretchr/testify/mock"
 )
 
@@ -29,7 +30,7 @@ func (s *JobServiceMock) GetJob(_ context.Context, ID ref.UUID) (job.Job, error)
 	return args.Get(0).(job.Job), args.Error(1)
 }
 
-func (s *JobServiceMock) ListJobs(_ context.Context) ([]job.Job, error) {
-	args := s.Called()
+func (s *JobServiceMock) ListJobs(_ context.Context, paginationParams converters.PaginationParams) ([]job.Job, error) {
+	args := s.Called(paginationParams)
 	return args.Get(0).([]job.Job), args.Error(1)
 }

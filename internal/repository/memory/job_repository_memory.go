@@ -11,8 +11,6 @@ import (
 	"github.com/KompiTech/itsm-reporting-service/internal/repository"
 )
 
-const repositorySize = 10
-
 // jobRepositoryMemory keeps data in memory
 type jobRepositoryMemory struct {
 	Rand  io.Reader
@@ -27,7 +25,7 @@ func NewJobRepositoryMemory(clock repository.Clock) repository.JobRepository {
 	}
 }
 
-// AddJob adds the given job to the repository (repository has fixed length)
+// AddJob adds the given job to the repository
 func (r *jobRepositoryMemory) AddJob(_ context.Context, job job.Job) (ref.UUID, error) {
 	now := r.clock.NowFormatted().String()
 
@@ -43,10 +41,6 @@ func (r *jobRepositoryMemory) AddJob(_ context.Context, job job.Job) (ref.UUID, 
 	}
 
 	r.jobs = append(r.jobs, storedJob)
-
-	if len(r.jobs) > repositorySize {
-		r.jobs = r.jobs[1:] // remove the first element
-	}
 
 	return jobID, nil
 }
@@ -114,11 +108,27 @@ func (r jobRepositoryMemory) GetLastJob(_ context.Context) (job.Job, error) {
 }
 
 // ListJobs returns the list of jobs from the repository (last one as first)
-func (r jobRepositoryMemory) ListJobs(_ context.Context) ([]job.Job, error) {
+func (r jobRepositoryMemory) ListJobs(_ context.Context, page, perPage uint) ([]job.Job, error) {
 	var list []job.Job
 
-	for i := len(r.jobs) - 1; i >= 0; i-- {
+	total := uint(len(r.jobs))
+
+	start := page * perPage
+	if start >= total {
+		start = total
+	}
+
+	end := start + perPage
+	if end > total {
+		end = total
+	}
+
+	lastIndex := int(total - start - 1)
+	firstIndex := int(total - end)
+
+	for i := lastIndex; i >= firstIndex; i-- {
 		storedJob := r.jobs[i]
+
 		j, err := r.convertStoredToDomainIncident(storedJob)
 		if err != nil {
 			return list, err

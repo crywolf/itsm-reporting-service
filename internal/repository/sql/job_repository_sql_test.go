@@ -72,7 +72,7 @@ func TestJobRepositorySQL_ListJobs(t *testing.T) {
 	defer func(open io.Closer) { _ = open.Close() }(copyist.Open(t))
 
 	repo, clock := newJobRepositorySQL(t)
-	repotests.TestJobRepositoryListJobs(t, repo, clock, repositorySize)
+	repotests.TestJobRepositoryListJobs(t, repo, clock)
 }
 
 func TestJobRepositorySQL_GetLastJob(t *testing.T) {
