@@ -23,12 +23,9 @@ func NewPaginationParams(r *http.Request) (PaginationParams, error) {
 	queryValues := r.URL.Query()
 	pageParam := queryValues.Get("page")
 	if pageParam == "" {
-		pageParam = "1"
+		pageParam = "0"
 	}
 	if page64, err = strconv.ParseUint(pageParam, 10, 0); err != nil {
-		return nil, presenters.NewErrorf(http.StatusBadRequest, "incorrect 'page' parameter: '%s'", pageParam)
-	}
-	if page64 == 0 {
 		return nil, presenters.NewErrorf(http.StatusBadRequest, "incorrect 'page' parameter: '%s'", pageParam)
 	}
 	return &paginationParams{

@@ -136,6 +136,11 @@ func (s sender) sendEmails(ctx context.Context, addresses []string, caption, sub
 
 	for _, r := range respPayload {
 		if r.ErrorCode != 0 {
+			if r.ErrorCode != 406 { // 406 — Inactive recipient, all other errors are considered serious, we finish here
+				return domain.NewErrorf(domain.ErrorCodeUnknown, "Email service returned error: %+v", r)
+			}
+
+			// 406 — Inactive recipient = not serious error, we just log it
 			s.logger.Warnw("Email service returned error for email recipient", "error", r)
 		}
 	}

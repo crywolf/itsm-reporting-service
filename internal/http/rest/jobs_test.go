@@ -11,6 +11,7 @@ import (
 	jobprocessor "github.com/KompiTech/itsm-reporting-service/internal/domain/job/processor"
 	"github.com/KompiTech/itsm-reporting-service/internal/domain/ref"
 	"github.com/KompiTech/itsm-reporting-service/internal/http/rest/api"
+	converters "github.com/KompiTech/itsm-reporting-service/internal/http/rest/api/input_converters"
 	"github.com/KompiTech/itsm-reporting-service/internal/mocks"
 	"github.com/KompiTech/itsm-reporting-service/internal/testutils"
 	"github.com/stretchr/testify/assert"
@@ -214,8 +215,9 @@ func TestListJobHandler(t *testing.T) {
 	list = append(list, job1, job2, job3)
 
 	jobsSvc := new(mocks.JobServiceMock)
-	jobsSvc.On("ListJobs", mock.AnythingOfType("*converters.paginationParams")).
-		Return(list, nil)
+	jobsSvc.On("ListJobs", mock.MatchedBy(
+		func(paginationParams converters.PaginationParams) bool { return paginationParams.Page() == 0 }),
+	).Return(list, nil)
 
 	jobProcessor := new(mocks.JobProcessorMock)
 
