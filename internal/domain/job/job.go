@@ -11,6 +11,9 @@ import (
 type Job struct {
 	uuid ref.UUID
 
+	// Type of the job
+	Type Type
+
 	// Time when the job was created
 	CreatedAt types.DateTime
 

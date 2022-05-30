@@ -25,7 +25,7 @@ func TestJobRepositoryMemory_ListJobs(t *testing.T) {
 	clock := mocks.NewFixedClock()
 	repo := NewJobRepositoryMemory(clock)
 
-	repotests.TestJobRepositoryListJobs(t, repo, clock, repositorySize)
+	repotests.TestJobRepositoryListJobs(t, repo, clock)
 }
 
 func TestJobRepositoryMemory_GetLastJob(t *testing.T) {

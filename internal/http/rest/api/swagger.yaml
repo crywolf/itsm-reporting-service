@@ -2,6 +2,19 @@ basePath: /
 consumes:
 - application/json
 definitions:
+  CreateJobParams:
+    description: CreateJobParams is the payload used to create new job
+    properties:
+      type:
+        description: Type of the job [FE report only|SD report only|all]
+        example: all
+        format: string
+        type: string
+        x-go-name: Type
+    required:
+    - type
+    type: object
+    x-go-package: github.com/KompiTech/itsm-reporting-service/internal/http/rest/api
   Job:
     description: Job API object
     properties:
@@ -54,6 +67,12 @@ definitions:
         format: date-time
         type: string
         x-go-name: TicketsDownloadStartedAt
+      type:
+        description: Type of the job
+        example: all
+        format: string
+        type: string
+        x-go-name: Type
       users_download_finished_at:
         description: Time when the users download finished
         format: date-time
@@ -70,9 +89,14 @@ definitions:
         x-go-name: UUID
     required:
     - uuid
+    - type
     - created_at
     type: object
     x-go-package: github.com/KompiTech/itsm-reporting-service/internal/http/rest/api
+  Type:
+    description: Type of the job is enum
+    type: object
+    x-go-package: github.com/KompiTech/itsm-reporting-service/internal/domain/job
 info:
   description: Documentation for ITSM Reporting Service REST API
   title: ITSM Reporting REST API
@@ -90,6 +114,12 @@ paths:
     post:
       description: Creates a new job
       operationId: CreateJob
+      parameters:
+      - in: body
+        name: Body
+        required: true
+        schema:
+          $ref: '#/definitions/CreateJobParams'
       responses:
         "201":
           $ref: '#/responses/jobCreatedResponse'

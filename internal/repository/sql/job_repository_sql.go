@@ -15,8 +15,6 @@ import (
 	_ "github.com/lib/pq" // Package pq is a pure Go Postgres driver for the database/sql package
 )
 
-const repositorySize = 10
-
 // jobRepositorySQL keeps data in SQL database
 type jobRepositorySQL struct {
 	Rand      io.Reader
@@ -45,7 +43,8 @@ func NewJobRepositorySQL(clock repository.Clock, db *sql.DB, rand io.Reader) (re
 	if _, err := db.Exec(
 		"CREATE TABLE IF NOT EXISTS " + tableName + " (" +
 			"uuid UUID PRIMARY KEY, " +
-			"created_at VARCHAR(30)," +
+			"type VARCHAR(30) NOT NULL, " +
+			"created_at VARCHAR(30) NOT NULL, " +
 			"final_status TEXT, " +
 			"channels_download_started_at VARCHAR(30), " +
 			"channels_download_finished_at VARCHAR(30), " +
@@ -62,13 +61,20 @@ func NewJobRepositorySQL(clock repository.Clock, db *sql.DB, rand io.Reader) (re
 		return nil, fmt.Errorf("error creating table %s: %v", tableName, err)
 	}
 
+	// DB auto-migration if DB was already in use in production
+	if _, err := db.Exec(
+		"ALTER TABLE " + tableName + " ADD COLUMN IF NOT EXISTS type VARCHAR(30) NOT NULL DEFAULT 'all'",
+	); err != nil {
+		return nil, fmt.Errorf("error adding 'type' column to the table %s: %v", tableName, err)
+	}
+
 	return &jobRepositorySQL{
 		Rand:      rand,
 		clock:     clock,
 		db:        db,
 		tableName: tableName,
 		fields: []string{
-			"uuid", "created_at", "final_status",
+			"uuid", "type", "created_at", "final_status",
 			"channels_download_started_at", "channels_download_finished_at",
 			"users_download_started_at", "users_download_finished_at",
 			"tickets_download_started_at", "tickets_download_finished_at",
@@ -87,8 +93,9 @@ func (r jobRepositorySQL) AddJob(ctx context.Context, job job.Job) (ref.UUID, er
 	now := r.clock.NowFormatted().String()
 
 	_, err = r.db.ExecContext(ctx,
-		"INSERT INTO "+r.tableName+" ("+r.tableFields()+") VALUES($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12, $13)",
+		"INSERT INTO "+r.tableName+" ("+r.tableFields()+") VALUES($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12, $13, $14)",
 		jobID,
+		job.Type.String(),
 		now,
 		job.FinalStatus,
 		job.ChannelsDownloadStartedAt,
@@ -148,9 +155,12 @@ func (r jobRepositorySQL) UpdateJob(ctx context.Context, job job.Job) (ref.UUID,
 func (r jobRepositorySQL) GetJob(ctx context.Context, ID ref.UUID) (job.Job, error) {
 	var j job.Job
 	var uuid ref.UUID
+	var typ string
+	var err error
 
 	if err := r.db.QueryRowContext(ctx, "SELECT "+r.tableFields()+" FROM "+r.tableName+" WHERE uuid = $1", ID).Scan(
 		&uuid,
+		&typ,
 		&j.CreatedAt,
 		&j.FinalStatus,
 		&j.ChannelsDownloadStartedAt,
@@ -172,6 +182,11 @@ func (r jobRepositorySQL) GetJob(ctx context.Context, ID ref.UUID) (job.Job, err
 		return j, err
 	}
 
+	j.Type, err = job.NewTypeFromString(typ)
+	if err != nil {
+		return j, err
+	}
+
 	if err := j.SetUUID(uuid); err != nil {
 		return j, err
 	}
@@ -182,11 +197,14 @@ func (r jobRepositorySQL) GetJob(ctx context.Context, ID ref.UUID) (job.Job, err
 func (r jobRepositorySQL) GetLastJob(ctx context.Context) (job.Job, error) {
 	var j job.Job
 	var uuid ref.UUID
+	var typ string
+	var err error
 
 	if err := r.db.QueryRowContext(ctx,
 		"SELECT "+r.tableFields()+" FROM "+
 			r.tableName+" ORDER BY created_at DESC LIMIT 1").Scan(
 		&uuid,
+		&typ,
 		&j.CreatedAt,
 		&j.FinalStatus,
 		&j.ChannelsDownloadStartedAt,
@@ -202,9 +220,14 @@ func (r jobRepositorySQL) GetLastJob(ctx context.Context) (job.Job, error) {
 	); err != nil {
 		notFound := errors.Is(err, sql.ErrNoRows)
 		if notFound {
-			return job.Job{}, domain.NewErrorf(domain.ErrorCodeUnknown, "no jobs in queue")
+			return j, domain.NewErrorf(domain.ErrorCodeUnknown, "no jobs in queue")
 		}
 		// Something else went wrong!
+		return j, err
+	}
+
+	j.Type, err = job.NewTypeFromString(typ)
+	if err != nil {
 		return j, err
 	}
 
@@ -215,14 +238,12 @@ func (r jobRepositorySQL) GetLastJob(ctx context.Context) (job.Job, error) {
 	return j, nil
 }
 
-func (r jobRepositorySQL) ListJobs(ctx context.Context) ([]job.Job, error) {
-	// TODO - add pagination?
-
+func (r jobRepositorySQL) ListJobs(ctx context.Context, page, perPage uint) ([]job.Job, error) {
 	var list []job.Job
 
 	rows, err := r.db.QueryContext(
 		ctx,
-		"SELECT "+r.tableFields()+" FROM "+r.tableName+" ORDER BY created_at DESC LIMIT $1", repositorySize,
+		"SELECT "+r.tableFields()+" FROM "+r.tableName+" ORDER BY created_at DESC OFFSET $1 LIMIT $2", page*perPage, perPage,
 	)
 	if err != nil {
 		return list, err
@@ -233,9 +254,11 @@ func (r jobRepositorySQL) ListJobs(ctx context.Context) ([]job.Job, error) {
 	for rows.Next() {
 		var j job.Job
 		var uuid ref.UUID
+		var typ string
 
 		if err := rows.Scan(
 			&uuid,
+			&typ,
 			&j.CreatedAt,
 			&j.FinalStatus,
 			&j.ChannelsDownloadStartedAt,
@@ -249,6 +272,11 @@ func (r jobRepositorySQL) ListJobs(ctx context.Context) ([]job.Job, error) {
 			&j.EmailsSendingStartedAt,
 			&j.EmailsSendingFinishedAt,
 		); err != nil {
+			return list, err
+		}
+
+		j.Type, err = job.NewTypeFromString(typ)
+		if err != nil {
 			return list, err
 		}
 

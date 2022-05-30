@@ -38,6 +38,7 @@ func (p jobPresenter) RenderJobList(w http.ResponseWriter, jobList []job.Job) {
 func (p jobPresenter) convertJobToAPI(j job.Job) api.Job {
 	apiJob := api.Job{
 		UUID:                           j.UUID().String(),
+		Type:                           j.Type,
 		CreatedAt:                      j.CreatedAt.String(),
 		ChannelsDownloadStartedAt:      j.ChannelsDownloadStartedAt.String(),
 		ChannelsDownloadFinishedAt:     j.ChannelsDownloadFinishedAt.String(),
