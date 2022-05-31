@@ -101,6 +101,13 @@ type createJobParameterWrapper struct {
 	Body CreateJobParams
 }
 
+// swagger:parameters ListJobs
+type ListJobsParameterWrapper struct {
+	// Pagination - requested page number
+	// in: query
+	Page uint `json:"page"`
+}
+
 // Data structure representing a single job
 // swagger:response jobResponse
 type jobResponseWrapper struct {
